@@ -1,0 +1,27 @@
+Package: ccaPP
+Type: Package
+Title: Robust canonical correlation analysis via projection pursuit
+Version: 0.1.0
+Date: 2012-04-12
+Author: Andreas Alfons
+Maintainer: Andreas Alfons
+    <andreas.alfons@econ.kuleuven.be>
+Depends:
+    Rcpp (>= 0.9.10),
+    pcaPP (>= 1.8-1)
+Imports:
+    RcppArmadillo (>= 0.2.36)
+LinkingTo: Rcpp, RcppArmadillo
+Suggests:
+    mvtnorm
+Description: Canonical correlation analysis via projection pursuit and fast
+    implementations of correlation estimators, with a focus on robust and
+    nonparametric methods.
+License: GPL (>= 2)
+LazyLoad: yes
+Collate:
+    'cca.R'
+    'cor.R'
+    'fastMAD.R'
+    'fastMedian.R'
+    'utils.R'
