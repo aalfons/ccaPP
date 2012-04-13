@@ -3,13 +3,88 @@
 #         KU Leuven
 # ----------------------
 
+#' (Robust) CCA via alternating series of grid searches
+#' 
+#' Perform canoncial correlation analysis via projection pursuit based on 
+#' alternating series of grid searches in two-dimensional subspaces of each 
+#' data set, with a focus on robust and nonparametric methods.
+#' 
+#' The algorithm is based on alternating series of grid searches in 
+#' two-dimensional subspaces of each data set.  In each grid search, 
+#' \code{nGrid} grid points on the unit circle in the corresponding plane are 
+#' obtained, and the directions from the center to each of the grid points are 
+#' examined.  In the first iteration, equispaced grid points in the interval 
+#' \eqn{[-\pi/2, \pi/2)}{[-pi/2, pi/2)} are used.  In each subsequent 
+#' iteration, the angles are halved such that the interval 
+#' \eqn{[-\pi/4, \pi/4)}{[-pi/4, pi/4)} is used in the second iteration and so 
+#' on.  If only one data set is multivariate, the algorithm simplifies 
+#' to iterative grid searches in two-dimensional subspaces of the corresponding 
+#' data set.
+#' 
+#' @aliases print.cca
+#' 
+#' @param x,y  each can be a numeric vector, matrix or data frame.
+#' @param k  an integer giving the number of canonical variables to compute.
+#' @param method  a character string specifying the correlation functional to 
+#' maximize.  Possible values are \code{"spearman"} for the Spearman 
+#' correlation, \code{"kendall"} for the Kendall correlation, \code{"quadrant"} 
+#' for the quadrant correlation, \code{"M"} for the correlation based on a 
+#' bivariate M-estimator of location and scatter with a Huber loss function, or 
+#' \code{"pearson"} for the classical Pearson correlation (see 
+#' \code{\link{corFunctions}}).
+#' @param control  a list of additional arguments to be passed to the specified 
+#' correlation functional.  If supplied, this takes precedence over additional 
+#' arguments supplied via the \code{\dots} argument.
+#' @param nIterations  an integer giving the maximum number of iterations.
+#' @param nAlternate  an integer giving the maximum number of alternate grid 
+#' searches in each iteration.
+#' @param nGrid  an integer giving the number of equally spaced grid points on 
+#' the unit circle to use in each grid search.
+#' @param tol  a small positive numeric value to be used for determining 
+#' convergence.
+#' @param \dots  additional arguments to be passed to the specified correlation 
+#' functional.
+#' 
+#' @returnClass cca
+#' @returnItem cor  a numeric vector giving the canonical correlation 
+#' measures.
+#' @returnItem A  a numeric matrix in which the columns contain the canonical 
+#' vectors for \code{x}.
+#' @returnItem B  a numeric matrix in which the columns contain the canonical 
+#' vectors for \code{y}.
+#' @returnItem call  the matched function call.
+#' 
+#' @author Andreas Alfons
+#' 
+#' @seealso \code{\link{ccaProj}}, \code{\link{corFunctions}}
+#' 
+#' @examples 
+#' ## generate data
+#' library("mvtnorm")
+#' set.seed(1234)  # for reproducibility
+#' p <- 3
+#' q <- 2
+#' m <- p + q
+#' sigma <- 0.5^t(sapply(1:m, function(i, j) abs(i-j), 1:m))
+#' xy <- rmvnorm(100, sigma=sigma)
+#' x <- xy[, 1:p]
+#' y <- xy[, (p+1):m]
+#' 
+#' ## Spearman correlation
+#' ccaGrid(x, y, method = "spearman")
+#' ccaGrid(x, y, method = "spearman", consistent = TRUE)
+#' 
+#' ## Pearson correlation
+#' ccaGrid(x, y, method = "pearson")
+#' 
+#' @keywords multivariate robust
+#' 
 #' @import Rcpp
 #' @import RcppArmadillo
 #' @import pcaPP
 #' @useDynLib ccaPP
-
-## CCA based on alternate grid searches
 #' @export
+
 ccaGrid <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
@@ -30,12 +105,90 @@ ccaGrid <- function(x, y, k = 1,
     cca
 }
 
-## CCA based on projections through the data points
+
+#' (Robust) CCA via projections through the data points
+#' 
+#' Perform canoncial correlation analysis via projection pursuit based on 
+#' projections through the data points, with a focus on robust and 
+#' nonparametric methods.
+#' 
+#' First the candidate projection directions are defined for each data set 
+#' from the respective center through each data point.  Then the basic 
+#' algorithm scans all \eqn{n^2} possible combinations for the maximum 
+#' correlation, where \eqn{n} is the number of observations.
+#' 
+#' For larger values of \eqn{n}, the basic algorithm is computationally 
+#' expensive, thus a faster modification is available as well.
+#' 
+#' @param x,y  each can be a numeric vector, matrix or data frame.
+#' @param k  an integer giving the number of canonical variables to compute.
+#' @param method  a character string specifying the correlation functional to 
+#' maximize.  Possible values are \code{"spearman"} for the Spearman 
+#' correlation, \code{"kendall"} for the Kendall correlation, \code{"quadrant"} 
+#' for the quadrant correlation, \code{"M"} for the correlation based on a 
+#' bivariate M-estimator of location and scatter with a Huber loss function, or 
+#' \code{"pearson"} for the classical Pearson correlation (see 
+#' \code{\link{corFunctions}}).
+#' @param control  a list of additional arguments to be passed to the specified 
+#' correlation functional.  If supplied, this takes precedence over additional 
+#' arguments supplied via the \code{\dots} argument.
+#' @param useL1Median  a logical indicating whether the \eqn{L_{1}}{L1} medians 
+#' should be used as the centers of the data sets (defaults to 
+#' \code{TRUE}).  If \code{FALSE}, the columnwise centers are used instead 
+#' (columnwise means if \code{method} is \code{"pearson"} and columnwise 
+#' medians otherwise).
+#' @param fast  a logical indicating whether the faster modification of the 
+#' algorithm should be used (defaults to \code{FALSE}).  See \dQuote{Details} 
+#' for more information.
+#' @param seed  optional initial seed for the random number generator (see 
+#' \code{\link{.Random.seed}}).
+#' @param \dots  additional arguments to be passed to the specified correlation 
+#' functional.
+#' 
+#' @returnClass cca
+#' @returnItem cor  a numeric vector giving the canonical correlation 
+#' measures.
+#' @returnItem A  a numeric matrix in which the columns contain the canonical 
+#' vectors for \code{x}.
+#' @returnItem B  a numeric matrix in which the columns contain the canonical 
+#' vectors for \code{y}.
+#' @returnItem call  the matched function call.
+#' 
+#' @author Andreas Alfons
+#' 
+#' @seealso \code{\link{ccaGrid}} \code{\link{corFunctions}}
+#' 
+#' @examples 
+#' ## generate data
+#' library("mvtnorm")
+#' set.seed(1234)  # for reproducibility
+#' p <- 3
+#' q <- 2
+#' m <- p + q
+#' sigma <- 0.5^t(sapply(1:m, function(i, j) abs(i-j), 1:m))
+#' xy <- rmvnorm(100, sigma=sigma)
+#' x <- xy[, 1:p]
+#' y <- xy[, (p+1):m]
+#' 
+#' ## Spearman correlation
+#' ccaProj(x, y, method = "spearman")
+#' ccaProj(x, y, method = "spearman", consistent = TRUE)
+#' 
+#' ## Pearson correlation
+#' ccaProj(x, y, method = "pearson")
+#' 
+#' @keywords multivariate robust
+#' 
+#' @import Rcpp
+#' @import RcppArmadillo
+#' @import pcaPP
+#' @useDynLib ccaPP
 #' @export
+
 ccaProj <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        control = list(...), useL1Median = TRUE, fast = FALSE, ..., 
-        seed = NULL) {
+        control = list(...), useL1Median = TRUE, fast = FALSE, 
+        seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
     ## define list of control arguments for algorithm

@@ -59,7 +59,8 @@
 #' @author Andreas Alfons, \eqn{n \log(n)}{n log(n)} implementation of the 
 #' Kendall correlation by David Simcha
 #' 
-#' @seealso \code{\link[stats]{cor}}
+#' @seealso \code{\link{ccaGrid}}, \code{\link{ccaProj}}, 
+#' \code{\link[stats]{cor}}
 #' 
 #' @examples 
 #' ## generate data

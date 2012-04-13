@@ -21,7 +21,7 @@ permTest <- function(x, y, R = 1000, algorithm = c("grid", "proj"), ...,
     if(!is.null(seed)) set.seed(seed)  # set seed for reproducibility
     ## compute maximum correlation
     call <- as.call(list(ccaFun, ...))
-    call$k <- 1  # compute only the first canonical correlation coefficient
+    call$k <- 1  # compute only the first canonical correlation measure
     call$x <- x
     call$y <- y
     r <- eval(call)$cor

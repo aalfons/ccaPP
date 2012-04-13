@@ -3,7 +3,7 @@
 #         KU Leuven
 # ----------------------
 
-#' @export
+#' @S3method print cca
 print.cca <- function(x, ...) {
     # print function call
     if(!is.null(call <- x$call)) {
@@ -17,7 +17,7 @@ print.cca <- function(x, ...) {
     invisible(x)
 }
 
-#' @export
+#' @S3method print permTest
 print.permTest <- function(x, ...) {
     # print general statement
     cat("\nPermutation test for independence\n\n")

@@ -119,6 +119,7 @@ corM(x, y)
   of the Kendall correlation by David Simcha
 }
 \seealso{
+  \code{\link{ccaGrid}}, \code{\link{ccaProj}},
   \code{\link[stats]{cor}}
 }
 \keyword{multivariate}
