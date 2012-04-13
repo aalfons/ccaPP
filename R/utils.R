@@ -3,6 +3,15 @@
 #         KU Leuven
 # ----------------------
 
+## transform canonical vectors back to original scale
+backtransform <- function(A, scale) {
+    apply(A, 2, 
+        function(a) {
+            sa <- a / scale       # multiply by scale of corresponding variable
+            sa / sqrt(sum(sa^2))  # divide by norm
+        })
+}
+
 ## call C++ to compute ranks of observations in a vector (for testing)
 fastRank <- function(x) {
     x <- as.numeric(x)
@@ -10,7 +19,7 @@ fastRank <- function(x) {
     .Call("R_rank", R_x=x, PACKAGE="fastCor")   # call C++ function
 }
 
-# get list of control arguments for correlation function
+## get list of control arguments for correlation function
 getCorControl <- function(method, control) {
     if(method %in% c("spearman", "kendall", "quadrant")) {
         # get default values (the three functions have the same arguments)
@@ -43,7 +52,19 @@ getCorControl <- function(method, control) {
     out
 }
 
-# (robustly) standardize the data
+## L1 median (for testing)
+l1Median <- function(x) {
+    # initializations
+    x <- as.matrix(x)
+    n <- nrow(x)
+    p <- ncol(x)
+    if(p == 0) return(numeric())       # no columns
+    if(n == 0) return(rep.int(NA, p))  # no observations
+    # call C++ function
+    .Call("R_l1Median", R_x=x, PACKAGE="ccaPP")
+}
+
+## (robustly) standardize the data
 standardize <- function(x, robust = TRUE) {
     if(robust) {
         # with median and MAD

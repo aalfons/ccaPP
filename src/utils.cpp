@@ -18,6 +18,26 @@ using namespace std;
 // median and MAD
 // --------------
 
+// L1 median
+vec l1Median(const mat& x) {
+	// call R function from package pcaPP
+	// TODO: call underlying C++ code directly
+	Environment pcaPP("package:pcaPP");
+	Function l1median = pcaPP["l1median"];
+	NumericMatrix Rcpp_x = wrap(x);					// does this reuse memory?
+	NumericVector Rcpp_center = l1median(Rcpp_x);	// call R function
+	vec center(Rcpp_center.begin(), Rcpp_center.size(), false);	// reuse memory
+	return center;
+}
+
+// R interface to l1Median() (for testing)
+SEXP R_l1Median(SEXP R_x) {
+	NumericMatrix Rcpp_x(R_x);	// convert data to Rcpp type
+	mat x(Rcpp_x.begin(), Rcpp_x.nrow(), Rcpp_x.ncol(), false);	// reuse memory
+	vec center = l1Median(x);	// call arma version
+	return wrap(center.memptr(), center.memptr() + center.n_elem);
+}
+
 // median using std::vector
 // order of observations is messed up
 double median(vector<double>& x) {

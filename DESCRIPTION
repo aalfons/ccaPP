@@ -25,3 +25,5 @@ Collate:
     'fastMAD.R'
     'fastMedian.R'
     'utils.R'
+    'permTest.R'
+    'print.R'
