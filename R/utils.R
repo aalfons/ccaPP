@@ -12,6 +12,12 @@ backtransform <- function(A, scale) {
         })
 }
 
+## check if indices are within the limits
+checkIndices <- function(indices, max) {
+    indices <- as.integer(indices)
+    indices[which(indices > 0 & indices <= max)]
+}    
+
 ## call C++ to compute ranks of observations in a vector (for testing)
 fastRank <- function(x) {
     x <- as.numeric(x)

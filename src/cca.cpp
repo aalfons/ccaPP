@@ -231,12 +231,25 @@ public:
 	uword nIterations;	// number of iterations of alternate grid searches
 	uword nAlternate;	// number of alternate grid searches in each iteration
 	uword nGrid;		// number of grid points to be used for grid searches
+	uvec initialX;		// x-variables to be used for finding order of y-variables
+	uvec initialY;		// y-variables to be used for finding order of x-variables
 	double tol;			// numeric tolerance for convergence
 	// constructors
 	GridControl();
 	GridControl(List&);
+	// get the order in which to update the elements of a weighting vector
+	template <class CorControl>
+	void findOrder(const mat&, const vec&, CorControl, uvec&, double&, vec&);
+	// get the order in which to update the elements of the weighting vectors
+	template <class CorControl>
+	void findOrder(const mat&, const mat&, CorControl, uvec&, uvec&, double&,
+			vec&, vec&, bool&);
 	// get equispaced grid of angles in a plane
 	vec getGrid(const uword&);
+	// grid search to update one weighting vector
+	template <class CorControl>
+	void gridSearch(const mat&, const uvec&, const vec&, CorControl, vec&,
+			double&, vec&);
 	// set counter of consecutive iterations without improvement
 	void setCounter(uword&, const double&, const double&);
 	// maximum correlation between multivariate data sets x and y
@@ -255,6 +268,18 @@ inline GridControl::GridControl(List& control) {
 	nIterations = as<uword>(control["nIterations"]);
 	nAlternate = as<uword>(control["nAlternate"]);
 	nGrid = as<uword>(control["nGrid"]);
+	IntegerVector Rcpp_initialX = control["initialX"];
+	int p = Rcpp_initialX.size();
+	initialX.set_size(p);
+	for(int j = 0; j < p; j++) {
+		initialX(j) = Rcpp_initialX[j];
+	}
+	IntegerVector Rcpp_initialY = control["initialY"];
+	int q = Rcpp_initialY.size();
+	initialY.set_size(q);
+	for(int j = 0; j < q; j++) {
+		initialY(j) = Rcpp_initialY[j];
+	}
 	tol = as<double>(control["tol"]);
 }
 
@@ -268,7 +293,7 @@ inline GridControl::GridControl(List& control) {
 // maxCor ....... maximum correlation to get initial value
 // a ............ weighting vector to get initial value
 template <class CorControl>
-void findOrder(const mat& x, const vec& y, CorControl corControl,
+void GridControl::findOrder(const mat& x, const vec& y, CorControl corControl,
 		uvec& orderX, double& maxCor, vec& a) {
 	// compute columnwise absolute correlations of x with y
 	const uword p = x.n_cols;
@@ -297,33 +322,83 @@ void findOrder(const mat& x, const vec& y, CorControl corControl,
 // b ............ second weighting vector to get initial value
 // startWithX ... logical to be computed that indicates whether to start with
 //                the first data set in the alternate grid searches
-// TODO: implement a faster version where random selection is used
-//       instead of computing average correlations to avoid computing the
-//       full correlation matrix
 template <class CorControl>
-void findOrder(const mat& x, const mat& y, CorControl corControl,
+void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 		uvec& orderX, uvec& orderY, double& maxCor, vec& a, vec& b,
 		bool& startWithX) {
-	// compute columnwise absolute correlations of x with y
 	const uword p = x.n_cols, q = y.n_cols;
-	mat corMat(p, q);
-	for(uword i = 0; i < p; i++) {
-		vec xx = x.unsafe_col(i);
-		for(uword j = 0; j < q; j++) {
-			corMat(i, j) = abs(corControl.cor(xx, y.unsafe_col(j)));
+	const uword pp = initialX.n_elem, qq = initialY.n_elem;
+	mat corMat;
+	vec avgCorX, avgCorY;
+	if((pp > 0) && (qq > 0)) {
+		// selected x- and y-variables for faster computation
+		// sort indices
+		initialX = sort(initialX);
+		initialY = sort(initialY);
+		// compute the absolute correlations of all x-variables with the
+		// selected y-variables
+		mat corMatX(p, qq);
+		for(int j = 0; j < qq; j++) {
+			vec yy = y.unsafe_col(initialY(j));
+			for(uword i = 0; i < p; i++) {
+				corMatX(i, j) = abs(corControl.cor(x.unsafe_col(i), yy));
+			}
 		}
+		// compute the absolute correlations of all y-variables with the
+		// selected x-variables with
+		// avoid recomputing already computed absolute correlations
+		uword indexY = 0, nextY = initialY(0);	// already computed
+		mat corMatY(q, pp);
+		for(int i = 0; i < q; i++) {
+			if(i == nextY) {
+				// use already computed absolute correlations
+				for(int j = 0; j < pp; j++) {
+					corMatY(i, j) = corMatX(initialX(j), indexY);
+				}
+				indexY++; nextY = initialY(indexY);
+			} else {
+				// compute absolute correlations with selected x-variables
+				vec yy = y.unsafe_col(i);
+				for(int j = 0; j < pp; j++) {
+					vec xx = x.unsafe_col(initialX(j));
+					corMatY(i, j) = abs(corControl.cor(yy, xx));
+				}
+			}
+		}
+		// compute average absolute correlations
+		avgCorX = mean(corMatX, 1);
+		avgCorY = mean(corMatY, 1);
+	} else {
+		// compute complete matrix of columnwise absolute correlations
+		corMat.set_size(p, q);
+		for(uword i = 0; i < p; i++) {
+			vec xx = x.unsafe_col(i);
+			for(uword j = 0; j < q; j++) {
+				corMat(i, j) = abs(corControl.cor(xx, y.unsafe_col(j)));
+			}
+		}
+		// compute average absolute correlations
+		avgCorX = mean(corMat, 1), avgCorY = mean(corMat, 0).t();
 	}
-	// compute average correlations to determine the order of the variables
-	// and the starting values for the weighting vectors
-	vec avgCorX = mean(corMat, 1), avgCorY = mean(corMat, 0).t();
+	// determine the order of the variables and the starting values for the
+	// weighting vectors from average correlations
 	orderX = order(avgCorX), orderY = order(avgCorY);
-	// store maximum correlation, set weights of corresponding variables to 1
-	// and determine with which data set to start in alternate grid searches
+	// set weights of corresponding variables to 1 and determine with which
+	// data set to start in alternate grid searches
 	uword firstX = orderX(0),  firstY = orderY(0);
-	maxCor = corMat(firstX, firstY);
 	a(firstX) = 1;
 	b(firstY) = 1;
 	startWithX = (avgCorX(firstX) >= avgCorY(firstY));
+	// store maximum correlation
+	if((pp > 0) && (qq > 0)) {
+		// compute absolute correlation between variables with highest averages
+		// (not all absolute correlations are precomuted)
+		vec xx = x.unsafe_col(firstX), yy = y.unsafe_col(firstY);
+		maxCor = abs(corControl.cor(xx, yy));
+	} else {
+		// take maximum correlation from full absolute correlation matrix
+		maxCor = corMat(firstX, firstY);
+	}
 }
 
 // get equispaced grid of angles in a plane
@@ -350,7 +425,7 @@ vec GridControl::getGrid(const uword& i) {
 // maxCor ....... maximum correlation to be updated
 // a ............ weighting vector to be updated
 template <class CorControl>
-void gridSearch(const mat& x, const uvec& orderX, const vec& y,
+void GridControl::gridSearch(const mat& x, const uvec& orderX, const vec& y,
 		CorControl corControl, vec& grid, double& maxCor, vec& a) {
 	// initializations
 	const uword p = x.n_cols, nGrid = grid.n_elem;
@@ -452,7 +527,8 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 			uvec orderX(p), orderY(q);
 			a = a.zeros(p); b = b.zeros(q);
 			bool startWithX;
-			findOrder(x, y, corControl, orderX, orderY, maxCor, a, b, startWithX);	// column orders
+			findOrder(x, y, corControl, orderX, orderY,
+					maxCor, a, b, startWithX);	// column orders
 			// perform alternate grid searches
 			if(startWithX) {
 				// start with grid search for x
@@ -524,8 +600,8 @@ class ProjControl {
 public:
 	bool useL1Median;
 	bool fast;
-	uvec initial;
 	uword nIterations;
+	uvec initial;
 	// constructors
 	ProjControl();
 	ProjControl(List&);
@@ -545,6 +621,7 @@ inline ProjControl::ProjControl() {
 inline ProjControl::ProjControl(List& control) {
 	useL1Median = as<bool>(control["useL1Median"]);
 	fast = as<bool>(control["fast"]);
+	nIterations = as<uword>(control["nIterations"]);
 	if(fast) {
 		IntegerVector Rcpp_initial = control["initial"];
 		if(Rcpp_initial.size() == 2) {
@@ -554,7 +631,6 @@ inline ProjControl::ProjControl(List& control) {
 			initial(1) = Rcpp_initial[1];
 		}
 	}
-	nIterations = as<uword>(control["nIterations"]);
 }
 
 // get matrix of directions through data points

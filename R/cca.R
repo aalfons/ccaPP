@@ -88,7 +88,7 @@
 ccaGrid <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
-        tol = 1e-06, ...) {
+        initial = NULL, tol = 1e-06, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
     ## define list of control arguments for algorithm
@@ -97,7 +97,7 @@ ccaGrid <- function(x, y, k = 1,
     nGrid <- as.integer(nGrid)
     tol <- as.numeric(tol)
     ppControl <- list(nIterations=nIterations, nAlternate=nAlternate, 
-        nGrid=nGrid, tol=tol)
+        nGrid=nGrid, initial=initial, tol=tol)
     ## call workhorse function
     cca <- ccaPP(x, y, k, method=method, corControl=control, 
         algorithm="grid", ppControl=ppControl)
@@ -188,19 +188,20 @@ ccaGrid <- function(x, y, k = 1,
 ccaProj <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         control = list(...), useL1Median = TRUE, fast = TRUE, 
-        initial = "random", nIterations = 10, seed = NULL, ...) {
+        nIterations = 10, initial = NULL, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
     nIterations <- as.integer(nIterations)
     ## define list of control arguments for algorithm
     ppControl <- list(useL1Median=isTRUE(useL1Median), fast=isTRUE(fast), 
-        initial=initial, nIterations=nIterations)
+        nIterations=nIterations, initial=initial)
     ## call workhorse function
     cca <- ccaPP(x, y, k, method=method, corControl=control, algorithm="proj", 
         ppControl=ppControl, seed=seed)
     cca$call <- matchedCall
     cca
 }
+
 
 ## workhorse function
 ccaPP <- function(x, y, k = 1, 
@@ -234,12 +235,49 @@ ccaPP <- function(x, y, k = 1,
         # check method and get list of control arguments
         method <- match.arg(method)
         corControl <- getCorControl(method, corControl)
-        # get initial random starting indices for fast algorithm based on 
-        # projections through data points
-        if(algorithm == "proj") {
+        if(algorithm == "grid") {
+            # check subset of variables to be used for determining the order of 
+            # the variables from the respective other data set
+            initial <- ppControl$initial
+            ppControl$initial <- NULL
+            if(!is.null(initial)) {
+                if(is.list(initial)) {
+                    # make sure initial is a list with two index vectors and 
+                    # drop invalid indices from each vector
+                    initial <- rep(initial, length.out=2)
+                    initial <- mapply(function(indices, max) {
+                            indices <- as.integer(indices)
+                            indices[which(indices > 0 & indices <= max)] - 1
+                        }, initial, c(p, q))
+                    valid <- sapply(initial, length) > 0
+                    # add the two index vectors to control object
+                    if(all(valid)) {
+                        ppControl$initialX <- initial[[1]]
+                        ppControl$initialY <- initial[[2]]
+                    } else initial <- NULL
+                } else {
+                    # check number of indices to sample
+                    initial <- rep(as.integer(initial), length.out=2)
+                    valid <- !is.na(initial) & initial > 0 & initial < c(p, q)
+                    if(all(valid)) {
+                        # generate index vectors and add them to control object
+                        if(!is.null(seed)) set.seed(seed)
+                        ppControl$initialX <- sample.int(p, initial[1]) - 1
+                        ppControl$initialY <- sample.int(q, initial[2]) - 1
+                    } else initial <- NULL
+                }
+            }
+            if(is.null(initial)) {
+                ppControl$initialX <- ppControl$initialY <- integer()
+            }
+        } else if(algorithm == "proj") {
+            # get initial random starting indices for fast algorithm based on 
+            # projections through data points
             if(ppControl$fast && p > 1 && q > 1) {
-                haveInitial <- is.numeric(ppControl$initial)
-                if(haveInitial) {
+                if(is.null(ppControl$initial)) {
+                    if(!is.null(seed)) set.seed(seed)
+                    ppControl$initial <- sample.int(n, 2) - 1
+                } else {
                     initial <- rep(as.integer(ppControl$initial), length.out=2)
                     # if one of the starting points has invalid value, replace 
                     # it with random starting point
@@ -250,9 +288,6 @@ ccaPP <- function(x, y, k = 1,
                         if(invalid[2]) initial[2] <- sample.int(n, 1)
                     }
                     ppControl$initial <- initial - 1
-                } else {
-                    if(!is.null(seed)) set.seed(seed)
-                    ppControl$initial <- sample.int(n, 2) - 1
                 }
             } else ppControl$initial <- integer()
         }
