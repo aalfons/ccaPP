@@ -138,7 +138,7 @@ ccaGrid <- function(x, y, k = 1,
 #' (columnwise means if \code{method} is \code{"pearson"} and columnwise 
 #' medians otherwise).
 #' @param fast  a logical indicating whether the faster modification of the 
-#' algorithm should be used (defaults to \code{FALSE}).  See \dQuote{Details} 
+#' algorithm should be used (defaults to \code{TRUE}).  See \dQuote{Details} 
 #' for more information.
 #' @param seed  optional initial seed for the random number generator (see 
 #' \code{\link{.Random.seed}}).
@@ -187,12 +187,14 @@ ccaGrid <- function(x, y, k = 1,
 
 ccaProj <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        control = list(...), useL1Median = TRUE, fast = FALSE, 
-        seed = NULL, ...) {
+        control = list(...), useL1Median = TRUE, fast = TRUE, 
+        initial = "random", nIterations = 10, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
+    nIterations <- as.integer(nIterations)
     ## define list of control arguments for algorithm
-    ppControl <- list(useL1Median=isTRUE(useL1Median), fast=isTRUE(fast))
+    ppControl <- list(useL1Median=isTRUE(useL1Median), fast=isTRUE(fast), 
+        initial=initial, nIterations=nIterations)
     ## call workhorse function
     cca <- ccaPP(x, y, k, method=method, corControl=control, algorithm="proj", 
         ppControl=ppControl, seed=seed)
@@ -234,9 +236,25 @@ ccaPP <- function(x, y, k = 1,
         corControl <- getCorControl(method, corControl)
         # get initial random starting indices for fast algorithm based on 
         # projections through data points
-        if(algorithm == "proj" && ppControl$fast && p > 1 && q > 1) {
-            if(!is.null(seed)) set.seed(seed)
-            ppControl$initial <- sample.int(n, 2) - 1
+        if(algorithm == "proj") {
+            if(ppControl$fast && p > 1 && q > 1) {
+                haveInitial <- is.numeric(ppControl$initial)
+                if(haveInitial) {
+                    initial <- rep(as.integer(ppControl$initial), length.out=2)
+                    # if one of the starting points has invalid value, replace 
+                    # it with random starting point
+                    invalid <- is.na(initial) | initial < 1 | initial > n
+                    if(any(invalid)) {
+                        if(!is.null(seed)) set.seed(seed)
+                        if(invalid[1]) initial[1] <- sample.int(n, 1)
+                        if(invalid[2]) initial[2] <- sample.int(n, 1)
+                    }
+                    ppControl$initial <- initial - 1
+                } else {
+                    if(!is.null(seed)) set.seed(seed)
+                    ppControl$initial <- sample.int(n, 2) - 1
+                }
+            } else ppControl$initial <- integer()
         }
         # standardize the data
         if(method == "pearson") {

@@ -297,6 +297,9 @@ void findOrder(const mat& x, const vec& y, CorControl corControl,
 // b ............ second weighting vector to get initial value
 // startWithX ... logical to be computed that indicates whether to start with
 //                the first data set in the alternate grid searches
+// TODO: implement a faster version where random selection is used
+//       instead of computing average correlations to avoid computing the
+//       full correlation matrix
 template <class CorControl>
 void findOrder(const mat& x, const mat& y, CorControl corControl,
 		uvec& orderX, uvec& orderY, double& maxCor, vec& a, vec& b,
@@ -522,6 +525,7 @@ public:
 	bool useL1Median;
 	bool fast;
 	uvec initial;
+	uword nIterations;
 	// constructors
 	ProjControl();
 	ProjControl(List&);
@@ -535,7 +539,8 @@ public:
 // constructors
 inline ProjControl::ProjControl() {
 	useL1Median = true;
-	fast = false;
+	fast = true;
+	nIterations = 10;
 }
 inline ProjControl::ProjControl(List& control) {
 	useL1Median = as<bool>(control["useL1Median"]);
@@ -549,6 +554,7 @@ inline ProjControl::ProjControl(List& control) {
 			initial(1) = Rcpp_initial[1];
 		}
 	}
+	nIterations = as<uword>(control["nIterations"]);
 }
 
 // get matrix of directions through data points
@@ -639,11 +645,67 @@ double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 		b = B.col(whichMax);
 	} else if((p > 1) && (q > 1)) {
 		// both data sets are multivariate
+		uword whichMaxX = 0, whichMaxY = 0;
 		if(fast) {
-			error("not implemented yet");
+			// compute correlations for all directions with the respective
+			// other random starting point
+			vec xx = x * A.unsafe_col(initial(0)), yy = y * B.unsafe_col(initial(1)), corX(n), corY(n);
+			for(uword i = 0; i < n; i++) {
+				vec yb = y * B.unsafe_col(i);			// projection in current y direction
+				corX(i) = abs(corControl.cor(xx, yb));	// absolute correlation with x
+				vec xa = x * A.unsafe_col(i);			// projection in current x direction
+				corY(i) = abs(corControl.cor(xa, yy));	// absolute correlation with y
+			}
+			// find maximum for each data set
+			double maxCorX = corX.max(whichMaxY), maxCorY = corY.max(whichMaxX);
+			// start with the data set with the larger maximum correlation
+			uword k = 0, previousMaxX = n+1, previousMaxY = n+1;
+			if(maxCorX >= maxCorY) {
+				maxCor = maxCorX;
+				while((k < nIterations) && (previousMaxX != whichMaxX) && (previousMaxY != whichMaxY)) {
+					previousMaxX = whichMaxX; previousMaxY = whichMaxY;
+					// keep y direction fixed
+					yy = y * B.unsafe_col(whichMaxY);	// update y direction
+					for(int i = 0; i < n; i++) {
+						vec xa = x * A.unsafe_col(i);			// projection in current x direction
+						corY(i) = abs(corControl.cor(xa, yy));	// absolute correlation with y
+					}
+					maxCor = corY.max(whichMaxX);		// update maximum correlation
+					// keep x direction fixed
+					xx = x * A.unsafe_col(whichMaxX);	// update x direction
+					for(int i = 0; i < n; i++) {
+						vec yb = y * B.unsafe_col(i);			// projection in current y direction
+						corX(i) = abs(corControl.cor(xx, yb));	// absolute correlation with x
+					}
+					maxCor = corX.max(whichMaxY);		// update maximum correlation
+					// update iterator
+					k++;
+				}
+			} else {
+				maxCor = maxCorY;
+				while((k < nIterations) && (previousMaxX != whichMaxX) && (previousMaxY != whichMaxY)) {
+					previousMaxX = whichMaxX; previousMaxY = whichMaxY;
+					// keep x direction fixed
+					xx = x * A.unsafe_col(whichMaxX);	// update x direction
+					for(int i = 0; i < n; i++) {
+						vec yb = y * B.unsafe_col(i);			// projection in current y direction
+						corX(i) = abs(corControl.cor(xx, yb));	// absolute correlation with x
+					}
+					maxCor = corX.max(whichMaxY);		// update maximum correlation
+					// keep y direction fixed
+					yy = y * B.unsafe_col(whichMaxY);	// update y direction
+					for(int i = 0; i < n; i++) {
+						vec xa = x * A.unsafe_col(i);			// projection in current x direction
+						corY(i) = abs(corControl.cor(xa, yy));	// absolute correlation with y
+					}
+					maxCor = corY.max(whichMaxX);		// update maximum correlation
+					// update iterator
+					k++;
+				}
+			}
 		} else {
+			// scan all n^2 possible combinations of directions
 			double corXY;
-			uword whichMaxX = 0, whichMaxY = 0;
 			for(uword i = 0; i < n; i++) {
 				vec xa = x * A.unsafe_col(i);				// projection in x space
 				for(uword j = 0; j < n; j++) {
@@ -657,10 +719,10 @@ double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 					}
 				}
 			}
-			// update directions corresponding to maximum correlation
-			a = A.col(whichMaxX);
-			b = B.col(whichMaxY);
 		}
+		// update directions corresponding to maximum correlation
+		a = A.col(whichMaxX);
+		b = B.col(whichMaxY);
 	} else {
 		return NA_REAL;	// should never happen
 	}

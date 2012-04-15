@@ -4,8 +4,8 @@
 \usage{
   ccaProj(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
-    control = list(...), useL1Median = TRUE, fast = FALSE,
-    seed = NULL, ...)
+    control = list(...), useL1Median = TRUE, fast = TRUE,
+    initial = "random", nIterations = 10, seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -38,7 +38,7 @@
 
   \item{fast}{a logical indicating whether the faster
   modification of the algorithm should be used (defaults to
-  \code{FALSE}).  See \dQuote{Details} for more
+  \code{TRUE}).  See \dQuote{Details} for more
   information.}
 
   \item{seed}{optional initial seed for the random number
