@@ -4,8 +4,8 @@
 \usage{
   ccaProj(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
-    control = list(...), useL1Median = TRUE, fast = TRUE,
-    initial = "random", nIterations = 10, seed = NULL, ...)
+    control = list(...), useL1Median = TRUE, fast = FALSE,
+    nIterations = 10, initial = NULL, seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data

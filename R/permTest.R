@@ -3,7 +3,6 @@
 #         KU Leuven
 # ----------------------
 
-## TODO: define class for results along with print method
 #' @export
 permTest <- function(x, y, R = 1000, algorithm = c("grid", "proj"), ..., 
         seed = NULL) {

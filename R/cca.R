@@ -187,7 +187,7 @@ ccaGrid <- function(x, y, k = 1,
 
 ccaProj <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        control = list(...), useL1Median = TRUE, fast = TRUE, 
+        control = list(...), useL1Median = TRUE, fast = FALSE, 
         nIterations = 10, initial = NULL, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
@@ -228,10 +228,6 @@ ccaPP <- function(x, y, k = 1,
         A <- B <- matrix(numeric(), 0, 0)
         cca <- list(cor=NA, A=A, B=B)
     } else {
-        if(k > 1) {
-            k <- 1
-            warning("currently only implemented for k = 1")
-        }
         # check method and get list of control arguments
         method <- match.arg(method)
         corControl <- getCorControl(method, corControl)
@@ -291,21 +287,21 @@ ccaPP <- function(x, y, k = 1,
                 }
             } else ppControl$initial <- integer()
         }
-        # standardize the data
-        if(method == "pearson") {
-            x <- standardize(x, robust=FALSE)
-            y <- standardize(y, robust=FALSE)
-        } else {
-            x <- standardize(x, robust=TRUE)
-            y <- standardize(y, robust=TRUE)
-        }
+#        # standardize the data
+#        if(method == "pearson") {
+#            x <- standardize(x, robust=FALSE)
+#            y <- standardize(y, robust=FALSE)
+#        } else {
+#            x <- standardize(x, robust=TRUE)
+#            y <- standardize(y, robust=TRUE)
+#        }
         # call C++ function
         cca <- .Call("R_ccaPP", R_x=x, R_y=y, R_k=k, R_method=method, 
             R_corControl=corControl, R_algorithm=algorithm, 
             R_ppControl=ppControl, PACKAGE="ccaPP")
-        # transform canonical vectors back to original scale
-        cca$A <- backtransform(cca$A, attr(x, "scale"))
-        cca$B <- backtransform(cca$B, attr(y, "scale"))
+#        # transform canonical vectors back to original scale
+#        cca$A <- backtransform(cca$A, attr(x, "scale"))
+#        cca$B <- backtransform(cca$B, attr(y, "scale"))
 }
     class(cca) <- "cca"
     cca

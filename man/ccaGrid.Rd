@@ -6,7 +6,8 @@
   ccaGrid(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
-    nGrid = 25, tol = 1e-06, ...)
+    nGrid = 25, initial = NULL, tol = 1e-06, seed = NULL,
+    ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data

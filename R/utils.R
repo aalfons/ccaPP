@@ -3,14 +3,14 @@
 #         KU Leuven
 # ----------------------
 
-## transform canonical vectors back to original scale
-backtransform <- function(A, scale) {
-    apply(A, 2, 
-        function(a) {
-            sa <- a / scale       # multiply by scale of corresponding variable
-            sa / sqrt(sum(sa^2))  # divide by norm
-        })
-}
+### transform canonical vectors back to original scale
+#backtransform <- function(A, scale) {
+#    apply(A, 2, 
+#        function(a) {
+#            sa <- a / scale       # divide by scale of corresponding variable
+#            sa / sqrt(sum(sa^2))  # divide by norm
+#        })
+#}
 
 ## check if indices are within the limits
 checkIndices <- function(indices, max) {
@@ -70,25 +70,25 @@ l1Median <- function(x) {
     .Call("R_l1Median", R_x=x, PACKAGE="ccaPP")
 }
 
-## (robustly) standardize the data
-standardize <- function(x, robust = TRUE) {
-    if(robust) {
-        # with median and MAD
-        tmp <- apply(x, 2, function(v) unlist(fastMAD(v)))
-        center <- tmp[1,]  # column medians
-        x <- sweep(x, 2, center, check.margin=FALSE)  # sweep out column centers
-        scale <- tmp[2,]  # column MADs
-        x <- sweep(x, 2, scale, "/", check.margin=FALSE)  # sweep out column scales
-    } else {
-        # with mean and standard deviation
-        center <- colMeans(x)  # compute column means (faster than apply)
-        x <- sweep(x, 2, center, check.margin=FALSE)  # sweep out column centers
-        f <- function(v) sqrt(sum(v^2) / max(1, length(v)-1))
-        scale <- apply(x, 2, f)  # compute column scales with zero means
-        x <- sweep(x, 2, scale, "/", check.margin=FALSE)  # sweep out column scales
-    }
-    # add attributes and return standardized data
-    attr(x, "center") <- center
-    attr(x, "scale") <- scale
-    x
-}
+### (robustly) standardize the data
+#standardize <- function(x, robust = TRUE) {
+#    if(robust) {
+#        # with median and MAD
+#        tmp <- apply(x, 2, function(v) unlist(fastMAD(v)))
+#        center <- tmp[1,]  # column medians
+#        x <- sweep(x, 2, center, check.margin=FALSE)  # sweep out column centers
+#        scale <- tmp[2,]  # column MADs
+#        x <- sweep(x, 2, scale, "/", check.margin=FALSE)  # sweep out column scales
+#    } else {
+#        # with mean and standard deviation
+#        center <- colMeans(x)  # compute column means (faster than apply)
+#        x <- sweep(x, 2, center, check.margin=FALSE)  # sweep out column centers
+#        f <- function(v) sqrt(sum(v^2) / max(1, length(v)-1))
+#        scale <- apply(x, 2, f)  # compute column scales with zero means
+#        x <- sweep(x, 2, scale, "/", check.margin=FALSE)  # sweep out column scales
+#    }
+#    # add attributes and return standardized data
+#    attr(x, "center") <- center
+#    attr(x, "scale") <- scale
+#    x
+#}

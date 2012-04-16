@@ -219,8 +219,10 @@ SEXP R_fastCor(SEXP R_x, SEXP R_y, SEXP R_method, SEXP R_control) {
 // parameters for the respective algorithm and have a maxCor() method to
 // execute the algorithm.
 
-// The data are assumed to be standardized.  Standardization and
-// backtransformation of the canonical vectors is done in R.
+// The data are assumed to be standardized for computing the maximum
+// correlation.  Standardization and backtransformation of the canonical
+// vectors is done in the workhorse function for canonical correlation
+// analysis to share code between the projection pursuit algorithms.
 
 // -----------------------------------------
 // control class for alternate grid searches
@@ -486,7 +488,7 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 	double maxCor;	// initialize maximum correlation
 	if((p == 1) && (q == 1)) {
 		// both data sets are univariate
-		a = a.ones(p); b = b.ones(q);
+		a.ones(p); b.ones(q);
 		vec xx = x.unsafe_col(0), yy = y.unsafe_col(0);	// reuse memory
 		maxCor = abs(corControl.cor(xx, yy));			// compute correlation
 	} else {
@@ -495,7 +497,7 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 			// x is multivariate, y is univariate
 			vec yy = y.unsafe_col(0);							// reuse memory
 			uvec orderX(p);
-			a = a.zeros(p); b = b.ones(q);
+			a.zeros(p); b.ones(q);
 			findOrder(x, yy, corControl, orderX, maxCor, a);	// column order
 			// stop if there are two consecutive iterations without improvement
 			uword i = 0, convCounter = 0;
@@ -510,7 +512,7 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 			// x is univariate, y is multivariate
 			vec xx = x.unsafe_col(0);							// reuse memory
 			uvec orderY(q);
-			a = a.ones(p); b = b.zeros(q);
+			a.ones(p); b.zeros(q);
 			findOrder(y, xx, corControl, orderY, maxCor, b);	// column order
 			// stop if there are two consecutive iterations without improvement
 			uword i = 0, convCounter = 0;
@@ -525,7 +527,7 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 			// both data sets are multivariate
 			// compute correlations between variables in x and y
 			uvec orderX(p), orderY(q);
-			a = a.zeros(p); b = b.zeros(q);
+			a.zeros(p); b.zeros(q);
 			bool startWithX;
 			findOrder(x, y, corControl, orderX, orderY,
 					maxCor, a, b, startWithX);	// column orders
@@ -615,7 +617,7 @@ public:
 // constructors
 inline ProjControl::ProjControl() {
 	useL1Median = true;
-	fast = true;
+	fast = false;
 	nIterations = 10;
 }
 inline ProjControl::ProjControl(List& control) {
@@ -674,12 +676,12 @@ double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 	if(p > 1) {
 		A = getDirections(x);	// directions through data points of x
 	} else {
-		a = ones<vec>(p);
+		a.ones(p);
 	}
 	if(q > 1) {
 		B = getDirections(y);	// directions through data points of y
 	} else {
-		b = ones<vec>(q);
+		b.ones(q);
 	}
 	// if one data set is univariate, projections through those data points
 	// don't need to be explored
@@ -816,27 +818,110 @@ double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 // canonical correlation analysis via projection pursuit
 // *****************************************************
 
+// standardize data using median/MAD or mean/SD
+// only scale is needed for backtransformation of canonical vectors
+mat standardize(const mat& x, const bool& robust, vec& scale) {
+	const uword n = x.n_rows, p = x.n_cols;
+	mat xs(n, p);
+	scale.set_size(p);
+	if(robust) {
+		// median and MAD
+		for(uword j = 0; j < p; j++) {
+			vec xj = x.unsafe_col(j);
+			double center;
+			scale(j) = mad(xj, center);				// compute median and MAD
+			xs.col(j) = (xj - center) / scale(j);	// standardize variable
+		}
+	} else {
+		// mean and standard deviation
+		for(uword j = 0; j < p; j++) {
+			vec xj = x.unsafe_col(j);
+			double center = mean(xj);				// compute mean
+			xj -= center;							// sweep out mean
+			scale(j) = norm(xj, 2) / (double)(n-1);	// compute SD
+			xs.col(j) = xj / scale(j);				// sweep out SD
+		}
+	}
+	return xs;
+}
+
+// transform canonical vectors back to the original scale
+void backtransform(vec& a, const vec& scale) {
+	a /= scale;			// divide by scale of corresponding variable
+	a /= norm(a, 2);	// divide by norm
+}
+
+// compute rotation matrix for Householder transformation
+mat householder(const vec& a) {
+	const uword p = a.n_elem;
+	vec e1 = zeros<vec>(p); e1(0) = 1;		// first basis vector
+	vec n1 = e1 - a; n1 = n1 / norm(n1, 2);	// unit normal vector
+	mat P = eye<mat>(p, p) - 2 * n1 * n1.t();
+	return P;
+}
+
 // canonical correlation analysis via projection pursuit
 // x ............ first data matrix
 // y ............ second data matrix
 // k ............ number of canonical variables to compute
+// robust ....... should the data be robustly standardized?
 // corControl ... control object to compute correlation
 // ppControl .... control object for algorithm
 // A ............ matrix of canonical vectors for first matrix to be updated
 // B ............ matrix of canonical vectors for second matrix to be updated
 template <class CorControl, class PPControl>
-vec ccaPP(const mat& x, const mat& y, const uword& k, CorControl corControl,
-		PPControl ppControl, mat& A, mat& B) {
+vec ccaPP(const mat& x, const mat& y, const uword& k, const bool robust,
+		CorControl corControl, PPControl ppControl, mat& A, mat& B) {
+	// initializations
 	uword p = x.n_cols, q = y.n_cols;
 	A.set_size(p, k); B.set_size(q, k);
 	vec r(k), a, b;
-	r(0) = ppControl.maxCor(x, y, corControl, a, b);
+	// standardize the data
+	vec scaleX, scaleY;
+	mat xs = standardize(x, robust, scaleX);
+	mat ys = standardize(y, robust, scaleY);
+	// compute first canonical correlation variables with standardized data
+	// and transform canonical vectors back to original scale
+	r(0) = ppControl.maxCor(xs, ys, corControl, a, b);
+	backtransform(a, scaleX); backtransform(b, scaleY);
 	A.col(0) = a; B.col(0) = b;
-//	for(uword l = 1; l < k; l++) {
-//		// TODO: implementation for k > 1
-//		// perform Householder transformation, compute the canonical correlation
-//		// and canonical vectors for reduced data sets, and transform back
-//	}
+	// compute remaining canonical correlations
+	if(k > 1) {
+		mat xl = x, yl = y;	// the data are reduced in each step
+		mat P, Q;			// for backtransformation
+		for(uword l = 1; l < k; l++) {
+			// perform Householder transformation
+			mat Pl = householder(a), Ql = householder(b);
+			xl = xl * Pl; xl.shed_col(0);	// reduced x data
+			xs = standardize(xl, robust, scaleX);
+			yl = yl * Ql; yl.shed_col(0);	// reduced y data
+			ys = standardize(yl, robust, scaleY);
+			// compute the canonical correlation and canonical vectors for the
+			// standardized reduced data sets and transform the canonical
+			// vectors back to the original scale
+			r(l) = ppControl.maxCor(xs, ys, corControl, a, b);
+			backtransform(a, scaleX); backtransform(b, scaleY);
+			// transform canonical vectors back to original space
+			if(l == 1) {
+				P = Pl; Q = Ql;
+			} else {
+				// expand current Householder matrix for x and premultiply with
+				// product of previous ones
+				Pl.insert_rows(0, zeros<mat>(l-1, p-l+1));
+				Pl.insert_cols(0, eye<mat>(p, l-1));
+				P = P * Pl;
+				// expand current Householder matrix for y and premultiply with
+				// product of previous ones
+				Ql.insert_rows(0, zeros<mat>(l-1, q-l+1));
+				Ql.insert_cols(0, eye<mat>(q, l-1));
+				Q = Q * Ql;
+			}
+			// expand canonical vectors and premultiply with product of
+			// corresponding Householder matrices
+			A.col(l) = P * join_cols(zeros<vec>(l), a);
+			B.col(l) = Q * join_cols(zeros<vec>(l), b);
+		}
+	}
 	return r;
 }
 
@@ -861,19 +946,19 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 		// define control object for the correlations and call the arma version
 		if(method == "spearman") {
 			CorSpearmanControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "kendall") {
 			CorKendallControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "quadrant") {
 			CorQuadrantControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "M") {
 			CorMControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "pearson") {
 			CorPearsonControl corControl;
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, false, corControl, ppControl, A, B);
 		} else {
 			error("method not available");
 		}
@@ -883,19 +968,19 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 		// define control object for the correlations and call the arma version
 		if(method == "spearman") {
 			CorSpearmanControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "kendall") {
 			CorKendallControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "quadrant") {
 			CorQuadrantControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "M") {
 			CorMControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, true, corControl, ppControl, A, B);
 		} else if(method == "pearson") {
 			CorPearsonControl corControl;
-			r = ccaPP(x, y, k, corControl, ppControl, A, B);
+			r = ccaPP(x, y, k, false, corControl, ppControl, A, B);
 		} else {
 			error("method not available");
 		}
