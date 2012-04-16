@@ -35,14 +35,33 @@
   of iterations.}
 
   \item{nAlternate}{an integer giving the maximum number of
-  alternate grid searches in each iteration.}
+  alternate series of grid searches in each iteration.}
 
   \item{nGrid}{an integer giving the number of equally
   spaced grid points on the unit circle to use in each grid
   search.}
 
+  \item{initial}{optional; either an integer vector of
+  length two or a list containing two index vectors.  In
+  the first case, the first integer gives the number of
+  variables of \code{x} to be randomly selected for
+  determining the order of the variables of \code{y} in the
+  corresponding series of grid searches, and vice versa for
+  the second integer.  In the latter case, the first list
+  element gives the indices of the variables of \code{x} to
+  be used for determining the order of the variables of
+  \code{y}, and vice versa for the second integer (see
+  \dQuote{Details}).}
+
   \item{tol}{a small positive numeric value to be used for
   determining convergence.}
+
+  \item{seed}{optional initial seed for the random number
+  generator (see \code{\link{.Random.seed}}).  This is only
+  used if \code{initial} specifies the numbers of variables
+  of each data set to be randomly selected for determining
+  the order of the variables of the respective other data
+  set.}
 
   \item{\dots}{additional arguments to be passed to the
   specified correlation functional.}
@@ -82,6 +101,21 @@
   and so on.  If only one data set is multivariate, the
   algorithm simplifies to iterative grid searches in
   two-dimensional subspaces of the corresponding data set.
+
+  In the basic algorithm, the order of the variables in a
+  series of grid searches for each of the data sets is
+  determined by the average absolute correlations with the
+  variables of the respective other data set.  Since this
+  requires to compute the full \eqn{(p \times q)}{(p x q)}
+  matrix of absolute correlations, where \eqn{p} denotes
+  the number of variables of \code{x} and \eqn{q} the
+  number of variables of \code{y}, a faster modification is
+  available as well.  In this modification, the average
+  absolute correlations are computed over only a subset of
+  the variables of the respective other data set.  It is
+  thereby possible to use randomly selected subsets of
+  variables, or to specify the subsets of variables
+  directly.
 }
 \examples{
 ## generate data

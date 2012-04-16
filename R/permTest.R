@@ -3,10 +3,67 @@
 #         KU Leuven
 # ----------------------
 
+#' (Robust) permutation test for independence
+#' 
+#' Test for independence of two data sets, with a focus on robust and 
+#' nonparametric correlation measures.
+#' 
+#' The test generates \code{R} data sets by randomly permuting the observations 
+#' of \code{x}, while keeping the observations of \code{y} fixed.  In each 
+#' replication, a function to compute a maximum correlation measure is 
+#' applied to the permuted data sets.  The \eqn{p}-value of the test is then 
+#' given by the percentage of replicates of the maximum correlation measure 
+#' that are larger than the maximum correlation measure computed from the 
+#' original data.
+#' 
+#' @param x,y  each can be a numeric vector, matrix or data frame.
+#' @param R  an integer giving the number of random permutations to be used.
+#' @param ccaFun  a function to compute a maximum correlation measure between 
+#' two data sets, e.g., \code{\link{ccaGrid}} (the default) or 
+#' \code{\link{ccaProj}}.  It should expect the data to be passed as the first 
+#' and second argument, and must return an object of class \code{"cca"}.
+#' @param seed  optional initial seed for the random number generator (see 
+#' \code{\link{.Random.seed}}).
+#' @param \dots  additional arguments to be passed to \code{ccaFun}.
+#' 
+#' @returnClass permTest
+#' @returnItem pValue  the \eqn{p}-value for the test.
+#' @returnItem cor0  the value of the test statistic.
+#' @returnItem cor  the values of the test statistic for each of the permutated 
+#' data sets.
+#' @returnItem R  the number of random permutations.
+#' @returnItem seed  the seed of the random number generator.
+#' @returnItem call  the matched function call.
+#' 
+#' @author Andreas Alfons
+#' 
+#' @seealso \code{\link{ccaGrid}}, \code{\link{ccaProj}}
+#' 
+#' @examples 
+#' ## generate data
+#' library("mvtnorm")
+#' set.seed(1234)  # for reproducibility
+#' p <- 3
+#' q <- 2
+#' m <- p + q
+#' sigma <- 0.5^t(sapply(1:m, function(i, j) abs(i-j), 1:m))
+#' xy <- rmvnorm(100, sigma=sigma)
+#' x <- xy[, 1:p]
+#' y <- xy[, (p+1):m]
+#' 
+#' ## Spearman correlation
+#' permTest(x, y, R=100, method = "spearman")
+#' permTest(x, y, R=100, method = "spearman", consistent = TRUE)
+#' 
+#' ## Pearson correlation
+#' permTest(x, y, R=100, method = "pearson")
+#' 
+#' @keywords multivariate robust
+#' 
 #' @export
-permTest <- function(x, y, R = 1000, algorithm = c("grid", "proj"), ..., 
-        seed = NULL) {
+permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, seed = NULL, ...) {
     ## initializations
+    matchedCall <- match.call()
     x <- as.matrix(x)
     y <- as.matrix(y)
     n <- nrow(x)
@@ -15,25 +72,30 @@ permTest <- function(x, y, R = 1000, algorithm = c("grid", "proj"), ...,
     }
     R <- rep(as.integer(R), length.out=1)
     if(is.na(R)) R <- formals()$R
-    algorithm <- match.arg(algorithm)
-    ccaFun <- switch(algorithm, grid=ccaGrid, proj=ccaProj)
-    if(!is.null(seed)) set.seed(seed)  # set seed for reproducibility
+    if(is.null(seed)) {
+        if(!exists(".Random.seed", envir=.GlobalEnv, inherits = FALSE)) runif(1)
+        seed <- .Random.seed
+    } else set.seed(seed)  # set seed for reproducibility
     ## compute maximum correlation
-    call <- as.call(list(ccaFun, ...))
-    call$k <- 1  # compute only the first canonical correlation measure
-    call$x <- x
-    call$y <- y
-    r <- eval(call)$cor
+    dots <- list(...)
+    if(length(dots) == 0) {
+        call <- as.call(list(ccaFun))
+        call[[2]] <- x
+        call[[3]] <- y
+    } else {
+        call <- as.call(c(list(ccaFun, x, y), dots))
+    }
+    r0 <- rep(eval(call)$cor, length.out=1)
     ## permute rows of x and compute maximum correlation with y for each 
     ## permuted data set
-    rPerm <- replicate(R, {
-            call$x <- x[sample.int(n), , drop=FALSE]
-            eval(call)$cor
+    r <- replicate(R, {
+            call[[2]] <- x[sample.int(n), , drop=FALSE]
+            rep(eval(call)$cor, length.out=1)
         })
     ## compute p-value
-    pval <- mean(r < rPerm)
+    pValue <- mean(r > r0)
     ## return results
-    out <- list(pval=pval, cor=r)
+    out <- list(pValue=pValue, cor0=r0, cor=r, R=R, seed=seed, call=matchedCall)
     class(out) <- "permTest"
     out
 }
