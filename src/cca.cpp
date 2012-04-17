@@ -233,8 +233,8 @@ public:
 	uword nIterations;	// number of iterations of alternate grid searches
 	uword nAlternate;	// number of alternate grid searches in each iteration
 	uword nGrid;		// number of grid points to be used for grid searches
-	uvec initialX;		// x-variables to be used for finding order of y-variables
-	uvec initialY;		// y-variables to be used for finding order of x-variables
+	uvec selectX;		// x-variables to be used for finding order of y-variables
+	uvec selectY;		// y-variables to be used for finding order of x-variables
 	double tol;			// numeric tolerance for convergence
 	// constructors
 	GridControl();
@@ -270,17 +270,17 @@ inline GridControl::GridControl(List& control) {
 	nIterations = as<uword>(control["nIterations"]);
 	nAlternate = as<uword>(control["nAlternate"]);
 	nGrid = as<uword>(control["nGrid"]);
-	IntegerVector Rcpp_initialX = control["initialX"];
-	int p = Rcpp_initialX.size();
-	initialX.set_size(p);
+	IntegerVector Rcpp_selectX = control["selectX"];
+	int p = Rcpp_selectX.size();
+	selectX.set_size(p);
 	for(int j = 0; j < p; j++) {
-		initialX(j) = Rcpp_initialX[j];
+		selectX(j) = Rcpp_selectX[j];
 	}
-	IntegerVector Rcpp_initialY = control["initialY"];
-	int q = Rcpp_initialY.size();
-	initialY.set_size(q);
+	IntegerVector Rcpp_selectY = control["selectY"];
+	int q = Rcpp_selectY.size();
+	selectY.set_size(q);
 	for(int j = 0; j < q; j++) {
-		initialY(j) = Rcpp_initialY[j];
+		selectY(j) = Rcpp_selectY[j];
 	}
 	tol = as<double>(control["tol"]);
 }
@@ -329,19 +329,19 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 		uvec& orderX, uvec& orderY, double& maxCor, vec& a, vec& b,
 		bool& startWithX) {
 	const uword p = x.n_cols, q = y.n_cols;
-	const uword pp = initialX.n_elem, qq = initialY.n_elem;
+	const uword pp = selectX.n_elem, qq = selectY.n_elem;
 	mat corMat;
 	vec avgCorX, avgCorY;
 	if((pp > 0) && (qq > 0)) {
 		// selected x- and y-variables for faster computation
 		// sort indices
-		initialX = sort(initialX);
-		initialY = sort(initialY);
+		selectX = sort(selectX);
+		selectY = sort(selectY);
 		// compute the absolute correlations of all x-variables with the
 		// selected y-variables
 		mat corMatX(p, qq);
 		for(uword j = 0; j < qq; j++) {
-			vec yy = y.unsafe_col(initialY(j));
+			vec yy = y.unsafe_col(selectY(j));
 			for(uword i = 0; i < p; i++) {
 				corMatX(i, j) = abs(corControl.cor(x.unsafe_col(i), yy));
 			}
@@ -349,20 +349,20 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 		// compute the absolute correlations of all y-variables with the
 		// selected x-variables with
 		// avoid recomputing already computed absolute correlations
-		uword indexY = 0, nextY = initialY(0);	// already computed
+		uword indexY = 0, nextY = selectY(0);	// already computed
 		mat corMatY(q, pp);
 		for(uword i = 0; i < q; i++) {
 			if(i == nextY) {
 				// use already computed absolute correlations
 				for(uword j = 0; j < pp; j++) {
-					corMatY(i, j) = corMatX(initialX(j), indexY);
+					corMatY(i, j) = corMatX(selectX(j), indexY);
 				}
-				indexY++; nextY = initialY(indexY);
+				indexY++; nextY = selectY(indexY);
 			} else {
 				// compute absolute correlations with selected x-variables
 				vec yy = y.unsafe_col(i);
 				for(uword j = 0; j < pp; j++) {
-					vec xx = x.unsafe_col(initialX(j));
+					vec xx = x.unsafe_col(selectX(j));
 					corMatY(i, j) = abs(corControl.cor(yy, xx));
 				}
 			}

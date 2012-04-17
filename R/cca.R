@@ -53,7 +53,7 @@
 #' alternate series of grid searches in each iteration.
 #' @param nGrid,splitcircle  an integer giving the number of equally spaced 
 #' grid points on the unit circle to use in each grid search.
-#' @param initial  optional; either an integer vector of length two or a list 
+#' @param select  optional; either an integer vector of length two or a list 
 #' containing two index vectors.  In the first case, the first integer gives 
 #' the number of variables of \code{x} to be randomly selected for determining 
 #' the order of the variables of \code{y} in the corresponding series of grid 
@@ -64,7 +64,7 @@
 #' @param tol,zero.tol  a small positive numeric value to be used for 
 #' determining convergence.
 #' @param seed  optional initial seed for the random number generator (see 
-#' \code{\link{.Random.seed}}).  This is only used if \code{initial} specifies 
+#' \code{\link{.Random.seed}}).  This is only used if \code{select} specifies 
 #' the numbers of variables of each data set to be randomly selected for 
 #' determining the order of the variables of the respective other data set.
 #' @param \dots  additional arguments to be passed to the specified correlation 
@@ -117,7 +117,7 @@
 ccaGrid <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
-        initial = NULL, tol = 1e-06, seed = NULL, ...) {
+        select = NULL, tol = 1e-06, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
     ## define list of control arguments for algorithm
@@ -126,7 +126,7 @@ ccaGrid <- function(x, y, k = 1,
     nGrid <- as.integer(nGrid)
     tol <- as.numeric(tol)
     ppControl <- list(nIterations=nIterations, nAlternate=nAlternate, 
-        nGrid=nGrid, initial=initial, tol=tol)
+        nGrid=nGrid, select=select, tol=tol)
     ## call workhorse function
     cca <- ccaPP(x, y, k, method=method, corControl=control, 
         algorithm="grid", ppControl=ppControl)
@@ -140,11 +140,11 @@ ccaGrid <- function(x, y, k = 1,
 
 CCAgrid <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        maxiter = 10, maxalter = 10, splitcircle = 25, initial=NULL, 
+        maxiter = 10, maxalter = 10, splitcircle = 25, select=NULL, 
         zero.tol = 1e-06, seed = NULL, ...) {
     ## call ccaGrid()
     ccaGrid(x, y, k=k, method=method, nIterations=maxiter, nAlternate=maxalter, 
-        nGrid=splitcircle, initial=initial, tol=zero.tol, seed=seed, ...)
+        nGrid=splitcircle, select=select, tol=zero.tol, seed=seed, ...)
 }
 
 
@@ -280,37 +280,37 @@ ccaPP <- function(x, y, k = 1,
         if(algorithm == "grid") {
             # check subset of variables to be used for determining the order of 
             # the variables from the respective other data set
-            initial <- ppControl$initial
-            ppControl$initial <- NULL
-            if(!is.null(initial)) {
-                if(is.list(initial)) {
-                    # make sure initial is a list with two index vectors and 
+            select <- ppControl$select
+            ppControl$select <- NULL
+            if(!is.null(select)) {
+                if(is.list(select)) {
+                    # make sure select is a list with two index vectors and 
                     # drop invalid indices from each vector
-                    initial <- rep(initial, length.out=2)
-                    initial <- mapply(function(indices, max) {
+                    select <- rep(select, length.out=2)
+                    select <- mapply(function(indices, max) {
                             indices <- as.integer(indices)
                             indices[which(indices > 0 & indices <= max)] - 1
-                        }, initial, c(p, q))
-                    valid <- sapply(initial, length) > 0
+                        }, select, c(p, q))
+                    valid <- sapply(select, length) > 0
                     # add the two index vectors to control object
                     if(all(valid)) {
-                        ppControl$initialX <- initial[[1]]
-                        ppControl$initialY <- initial[[2]]
-                    } else initial <- NULL
+                        ppControl$selectX <- select[[1]]
+                        ppControl$selectY <- select[[2]]
+                    } else select <- NULL
                 } else {
                     # check number of indices to sample
-                    initial <- rep(as.integer(initial), length.out=2)
-                    valid <- !is.na(initial) & initial > 0 & initial < c(p, q)
+                    select <- rep(as.integer(select), length.out=2)
+                    valid <- !is.na(select) & select > 0 & select < c(p, q)
                     if(all(valid)) {
                         # generate index vectors and add them to control object
                         if(!is.null(seed)) set.seed(seed)
-                        ppControl$initialX <- sample.int(p, initial[1]) - 1
-                        ppControl$initialY <- sample.int(q, initial[2]) - 1
-                    } else initial <- NULL
+                        ppControl$selectX <- sample.int(p, select[1]) - 1
+                        ppControl$selectY <- sample.int(q, select[2]) - 1
+                    } else select <- NULL
                 }
             }
-            if(is.null(initial)) {
-                ppControl$initialX <- ppControl$initialY <- integer()
+            if(is.null(select)) {
+                ppControl$selectX <- ppControl$selectY <- integer()
             }
         }
         # call C++ function

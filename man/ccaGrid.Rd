@@ -7,13 +7,13 @@
   ccaGrid(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
-    nGrid = 25, initial = NULL, tol = 1e-06, seed = NULL,
+    nGrid = 25, select = NULL, tol = 1e-06, seed = NULL,
     ...)
 
   CCAgrid(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     maxiter = 10, maxalter = 10, splitcircle = 25,
-    initial = NULL, zero.tol = 1e-06, seed = NULL, ...)
+    select = NULL, zero.tol = 1e-06, seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -48,7 +48,7 @@
   equally spaced grid points on the unit circle to use in
   each grid search.}
 
-  \item{initial}{optional; either an integer vector of
+  \item{select}{optional; either an integer vector of
   length two or a list containing two index vectors.  In
   the first case, the first integer gives the number of
   variables of \code{x} to be randomly selected for
@@ -65,7 +65,7 @@
 
   \item{seed}{optional initial seed for the random number
   generator (see \code{\link{.Random.seed}}).  This is only
-  used if \code{initial} specifies the numbers of variables
+  used if \code{select} specifies the numbers of variables
   of each data set to be randomly selected for determining
   the order of the variables of the respective other data
   set.}
