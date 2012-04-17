@@ -340,7 +340,7 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 		// compute the absolute correlations of all x-variables with the
 		// selected y-variables
 		mat corMatX(p, qq);
-		for(int j = 0; j < qq; j++) {
+		for(uword j = 0; j < qq; j++) {
 			vec yy = y.unsafe_col(initialY(j));
 			for(uword i = 0; i < p; i++) {
 				corMatX(i, j) = abs(corControl.cor(x.unsafe_col(i), yy));
@@ -351,17 +351,17 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 		// avoid recomputing already computed absolute correlations
 		uword indexY = 0, nextY = initialY(0);	// already computed
 		mat corMatY(q, pp);
-		for(int i = 0; i < q; i++) {
+		for(uword i = 0; i < q; i++) {
 			if(i == nextY) {
 				// use already computed absolute correlations
-				for(int j = 0; j < pp; j++) {
+				for(uword j = 0; j < pp; j++) {
 					corMatY(i, j) = corMatX(initialX(j), indexY);
 				}
 				indexY++; nextY = initialY(indexY);
 			} else {
 				// compute absolute correlations with selected x-variables
 				vec yy = y.unsafe_col(i);
-				for(int j = 0; j < pp; j++) {
+				for(uword j = 0; j < pp; j++) {
 					vec xx = x.unsafe_col(initialX(j));
 					corMatY(i, j) = abs(corControl.cor(yy, xx));
 				}
@@ -601,9 +601,6 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 class ProjControl {
 public:
 	bool useL1Median;
-	bool fast;
-	uword nIterations;
-	uvec initial;
 	// constructors
 	ProjControl();
 	ProjControl(List&);
@@ -617,22 +614,9 @@ public:
 // constructors
 inline ProjControl::ProjControl() {
 	useL1Median = true;
-	fast = false;
-	nIterations = 10;
 }
 inline ProjControl::ProjControl(List& control) {
 	useL1Median = as<bool>(control["useL1Median"]);
-	fast = as<bool>(control["fast"]);
-	nIterations = as<uword>(control["nIterations"]);
-	if(fast) {
-		IntegerVector Rcpp_initial = control["initial"];
-		if(Rcpp_initial.size() == 2) {
-			// initial contains two indices if p > 1 and q > 1
-			initial.set_size(2);
-			initial(0) = Rcpp_initial[0];
-			initial(1) = Rcpp_initial[1];
-		}
-	}
 }
 
 // get matrix of directions through data points
@@ -723,78 +707,19 @@ double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 		b = B.col(whichMax);
 	} else if((p > 1) && (q > 1)) {
 		// both data sets are multivariate
+		// scan all n^2 possible combinations of directions
 		uword whichMaxX = 0, whichMaxY = 0;
-		if(fast) {
-			// compute correlations for all directions with the respective
-			// other random starting point
-			vec xx = x * A.unsafe_col(initial(0)), yy = y * B.unsafe_col(initial(1)), corX(n), corY(n);
-			for(uword i = 0; i < n; i++) {
-				vec yb = y * B.unsafe_col(i);			// projection in current y direction
-				corX(i) = abs(corControl.cor(xx, yb));	// absolute correlation with x
-				vec xa = x * A.unsafe_col(i);			// projection in current x direction
-				corY(i) = abs(corControl.cor(xa, yy));	// absolute correlation with y
-			}
-			// find maximum for each data set
-			double maxCorX = corX.max(whichMaxY), maxCorY = corY.max(whichMaxX);
-			// start with the data set with the larger maximum correlation
-			uword k = 0, previousMaxX = n+1, previousMaxY = n+1;
-			if(maxCorX >= maxCorY) {
-				maxCor = maxCorX;
-				while((k < nIterations) && (previousMaxX != whichMaxX) && (previousMaxY != whichMaxY)) {
-					previousMaxX = whichMaxX; previousMaxY = whichMaxY;
-					// keep y direction fixed
-					yy = y * B.unsafe_col(whichMaxY);	// update y direction
-					for(int i = 0; i < n; i++) {
-						vec xa = x * A.unsafe_col(i);			// projection in current x direction
-						corY(i) = abs(corControl.cor(xa, yy));	// absolute correlation with y
-					}
-					maxCor = corY.max(whichMaxX);		// update maximum correlation
-					// keep x direction fixed
-					xx = x * A.unsafe_col(whichMaxX);	// update x direction
-					for(int i = 0; i < n; i++) {
-						vec yb = y * B.unsafe_col(i);			// projection in current y direction
-						corX(i) = abs(corControl.cor(xx, yb));	// absolute correlation with x
-					}
-					maxCor = corX.max(whichMaxY);		// update maximum correlation
-					// update iterator
-					k++;
-				}
-			} else {
-				maxCor = maxCorY;
-				while((k < nIterations) && (previousMaxX != whichMaxX) && (previousMaxY != whichMaxY)) {
-					previousMaxX = whichMaxX; previousMaxY = whichMaxY;
-					// keep x direction fixed
-					xx = x * A.unsafe_col(whichMaxX);	// update x direction
-					for(int i = 0; i < n; i++) {
-						vec yb = y * B.unsafe_col(i);			// projection in current y direction
-						corX(i) = abs(corControl.cor(xx, yb));	// absolute correlation with x
-					}
-					maxCor = corX.max(whichMaxY);		// update maximum correlation
-					// keep y direction fixed
-					yy = y * B.unsafe_col(whichMaxY);	// update y direction
-					for(int i = 0; i < n; i++) {
-						vec xa = x * A.unsafe_col(i);			// projection in current x direction
-						corY(i) = abs(corControl.cor(xa, yy));	// absolute correlation with y
-					}
-					maxCor = corY.max(whichMaxX);		// update maximum correlation
-					// update iterator
-					k++;
-				}
-			}
-		} else {
-			// scan all n^2 possible combinations of directions
-			double corXY;
-			for(uword i = 0; i < n; i++) {
-				vec xa = x * A.unsafe_col(i);				// projection in x space
-				for(uword j = 0; j < n; j++) {
-					vec yb = y * B.unsafe_col(j);			// projection in y space
-					corXY = abs(corControl.cor(xa, yb));	// absolute correlation
-					if(corXY > maxCor) {
-						// update maximum correlation
-						maxCor = corXY;
-						whichMaxX = i;
-						whichMaxY = j;
-					}
+		double corXY;
+		for(uword i = 0; i < n; i++) {
+			vec xa = x * A.unsafe_col(i);				// projection in x space
+			for(uword j = 0; j < n; j++) {
+				vec yb = y * B.unsafe_col(j);			// projection in y space
+				corXY = abs(corControl.cor(xa, yb));	// absolute correlation
+				if(corXY > maxCor) {
+					// update maximum correlation
+					maxCor = corXY;
+					whichMaxX = i;
+					whichMaxY = j;
 				}
 			}
 		}
@@ -820,6 +745,9 @@ double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 
 // standardize data using median/MAD or mean/SD
 // only scale is needed for backtransformation of canonical vectors
+// x ........ data matrix
+// robust ... should the data be robustly standardized?
+// scale .... scale estimates of the variables to be computed
 mat standardize(const mat& x, const bool& robust, vec& scale) {
 	const uword n = x.n_rows, p = x.n_cols;
 	mat xs(n, p);
@@ -846,12 +774,15 @@ mat standardize(const mat& x, const bool& robust, vec& scale) {
 }
 
 // transform canonical vectors back to the original scale
+// a ....... canonical vector
+// scale ... scale estimates of the corresponding original variables
 void backtransform(vec& a, const vec& scale) {
 	a /= scale;			// divide by scale of corresponding variable
 	a /= norm(a, 2);	// divide by norm
 }
 
 // compute rotation matrix for Householder transformation
+// a ... canonical vector
 mat householder(const vec& a) {
 	const uword p = a.n_elem;
 	vec e1 = zeros<vec>(p); e1(0) = 1;		// first basis vector

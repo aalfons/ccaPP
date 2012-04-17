@@ -47,11 +47,12 @@
 #' @param control  a list of additional arguments to be passed to the specified 
 #' correlation functional.  If supplied, this takes precedence over additional 
 #' arguments supplied via the \code{\dots} argument.
-#' @param nIterations  an integer giving the maximum number of iterations.
-#' @param nAlternate  an integer giving the maximum number of alternate series 
-#' of grid searches in each iteration.
-#' @param nGrid  an integer giving the number of equally spaced grid points on 
-#' the unit circle to use in each grid search.
+#' @param nIterations,maxiter  an integer giving the maximum number of 
+#' iterations.
+#' @param nAlternate,maxalter  an integer giving the maximum number of 
+#' alternate series of grid searches in each iteration.
+#' @param nGrid,splitcircle  an integer giving the number of equally spaced 
+#' grid points on the unit circle to use in each grid search.
 #' @param initial  optional; either an integer vector of length two or a list 
 #' containing two index vectors.  In the first case, the first integer gives 
 #' the number of variables of \code{x} to be randomly selected for determining 
@@ -60,8 +61,8 @@
 #' first list element gives the indices of the variables of \code{x} to be used 
 #' for determining the order of the variables of \code{y}, and vice versa for 
 #' the second integer (see \dQuote{Details}).
-#' @param tol  a small positive numeric value to be used for determining 
-#' convergence.
+#' @param tol,zero.tol  a small positive numeric value to be used for 
+#' determining convergence.
 #' @param seed  optional initial seed for the random number generator (see 
 #' \code{\link{.Random.seed}}).  This is only used if \code{initial} specifies 
 #' the numbers of variables of each data set to be randomly selected for 
@@ -77,6 +78,10 @@
 #' @returnItem B  a numeric matrix in which the columns contain the canonical 
 #' vectors for \code{y}.
 #' @returnItem call  the matched function call.
+#' 
+#' @note \code{CCAgrid} is a simple wrapper function for \code{ccaGrid} for 
+#' more compatibility with package \pkg{pcaPP} concerning function and argument 
+#' names.
 #' 
 #' @author Andreas Alfons
 #' 
@@ -129,6 +134,19 @@ ccaGrid <- function(x, y, k = 1,
     cca
 }
 
+## wrapper function for more compatibility with package pcaPP
+#' @rdname ccaGrid
+#' @export
+
+CCAgrid <- function(x, y, k = 1, 
+        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+        maxiter = 10, maxalter = 10, splitcircle = 25, initial=NULL, 
+        zero.tol = 1e-06, seed = NULL, ...) {
+    ## call ccaGrid()
+    ccaGrid(x, y, k=k, method=method, nIterations=maxiter, nAlternate=maxalter, 
+        nGrid=splitcircle, initial=initial, tol=zero.tol, seed=seed, ...)
+}
+
 
 #' (Robust) CCA via projections through the data points
 #' 
@@ -137,12 +155,9 @@ ccaGrid <- function(x, y, k = 1,
 #' nonparametric methods.
 #' 
 #' First the candidate projection directions are defined for each data set 
-#' from the respective center through each data point.  Then the basic 
-#' algorithm scans all \eqn{n^2} possible combinations for the maximum 
-#' correlation, where \eqn{n} is the number of observations.
-#' 
-#' For larger values of \eqn{n}, the basic algorithm is computationally 
-#' expensive, thus a faster modification is available as well.
+#' from the respective center through each data point.  Then the algorithm 
+#' scans all \eqn{n^2} possible combinations for the maximum correlation, 
+#' where \eqn{n} is the number of observations.
 #' 
 #' @param x,y  each can be a numeric vector, matrix or data frame.
 #' @param k  an integer giving the number of canonical variables to compute.
@@ -161,11 +176,6 @@ ccaGrid <- function(x, y, k = 1,
 #' \code{TRUE}).  If \code{FALSE}, the columnwise centers are used instead 
 #' (columnwise means if \code{method} is \code{"pearson"} and columnwise 
 #' medians otherwise).
-#' @param fast  a logical indicating whether the faster modification of the 
-#' algorithm should be used (defaults to \code{TRUE}).  See \dQuote{Details} 
-#' for more information.
-#' @param seed  optional initial seed for the random number generator (see 
-#' \code{\link{.Random.seed}}).
 #' @param \dots  additional arguments to be passed to the specified correlation 
 #' functional.
 #' 
@@ -177,6 +187,9 @@ ccaGrid <- function(x, y, k = 1,
 #' @returnItem B  a numeric matrix in which the columns contain the canonical 
 #' vectors for \code{y}.
 #' @returnItem call  the matched function call.
+#' 
+#' @note \code{CCAproj} is a simple wrapper function for \code{ccaProj} for 
+#' more compatibility with package \pkg{pcaPP} concerning function names.
 #' 
 #' @author Andreas Alfons
 #' 
@@ -211,19 +224,27 @@ ccaGrid <- function(x, y, k = 1,
 
 ccaProj <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        control = list(...), useL1Median = TRUE, fast = FALSE, 
-        nIterations = 10, initial = NULL, seed = NULL, ...) {
+        control = list(...), useL1Median = TRUE, ...) {
     ## initializations
     matchedCall <- match.call()
-    nIterations <- as.integer(nIterations)
     ## define list of control arguments for algorithm
-    ppControl <- list(useL1Median=isTRUE(useL1Median), fast=isTRUE(fast), 
-        nIterations=nIterations, initial=initial)
+    ppControl <- list(useL1Median=isTRUE(useL1Median))
     ## call workhorse function
     cca <- ccaPP(x, y, k, method=method, corControl=control, algorithm="proj", 
-        ppControl=ppControl, seed=seed)
+        ppControl=ppControl)
     cca$call <- matchedCall
     cca
+}
+
+## wrapper function for more compatibility with package pcaPP
+#' @rdname ccaProj
+#' @export
+
+CCAproj <- function(x, y, k = 1, 
+        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+        useL1Median = TRUE, ...) {
+    ## call ccaGrid()
+    ccaGrid(x, y, k=k, method=method, useL1Median=useL1Median, ...)
 }
 
 
@@ -255,6 +276,7 @@ ccaPP <- function(x, y, k = 1,
         # check method and get list of control arguments
         method <- match.arg(method)
         corControl <- getCorControl(method, corControl)
+        # additional checks for grid search algorithm
         if(algorithm == "grid") {
             # check subset of variables to be used for determining the order of 
             # the variables from the respective other data set
@@ -290,43 +312,13 @@ ccaPP <- function(x, y, k = 1,
             if(is.null(initial)) {
                 ppControl$initialX <- ppControl$initialY <- integer()
             }
-        } else if(algorithm == "proj") {
-            # get initial random starting indices for fast algorithm based on 
-            # projections through data points
-            if(ppControl$fast && p > 1 && q > 1) {
-                if(is.null(ppControl$initial)) {
-                    if(!is.null(seed)) set.seed(seed)
-                    ppControl$initial <- sample.int(n, 2) - 1
-                } else {
-                    initial <- rep(as.integer(ppControl$initial), length.out=2)
-                    # if one of the starting points has invalid value, replace 
-                    # it with random starting point
-                    invalid <- is.na(initial) | initial < 1 | initial > n
-                    if(any(invalid)) {
-                        if(!is.null(seed)) set.seed(seed)
-                        if(invalid[1]) initial[1] <- sample.int(n, 1)
-                        if(invalid[2]) initial[2] <- sample.int(n, 1)
-                    }
-                    ppControl$initial <- initial - 1
-                }
-            } else ppControl$initial <- integer()
         }
-#        # standardize the data
-#        if(method == "pearson") {
-#            x <- standardize(x, robust=FALSE)
-#            y <- standardize(y, robust=FALSE)
-#        } else {
-#            x <- standardize(x, robust=TRUE)
-#            y <- standardize(y, robust=TRUE)
-#        }
         # call C++ function
         cca <- .Call("R_ccaPP", R_x=x, R_y=y, R_k=k, R_method=method, 
             R_corControl=corControl, R_algorithm=algorithm, 
             R_ppControl=ppControl, PACKAGE="ccaPP")
-#        # transform canonical vectors back to original scale
-#        cca$A <- backtransform(cca$A, attr(x, "scale"))
-#        cca$B <- backtransform(cca$B, attr(y, "scale"))
-}
+    }
+    ## assign class and return results
     class(cca) <- "cca"
     cca
 }

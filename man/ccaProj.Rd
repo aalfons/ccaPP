@@ -1,11 +1,15 @@
 \name{ccaProj}
 \alias{ccaProj}
+\alias{CCAproj}
 \title{(Robust) CCA via projections through the data points}
 \usage{
   ccaProj(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
-    control = list(...), useL1Median = TRUE, fast = FALSE,
-    nIterations = 10, initial = NULL, seed = NULL, ...)
+    control = list(...), useL1Median = TRUE, ...)
+
+  CCAproj(x, y, k = 1,
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
+    useL1Median = TRUE, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -36,14 +40,6 @@
   (columnwise means if \code{method} is \code{"pearson"}
   and columnwise medians otherwise).}
 
-  \item{fast}{a logical indicating whether the faster
-  modification of the algorithm should be used (defaults to
-  \code{TRUE}).  See \dQuote{Details} for more
-  information.}
-
-  \item{seed}{optional initial seed for the random number
-  generator (see \code{\link{.Random.seed}}).}
-
   \item{\dots}{additional arguments to be passed to the
   specified correlation functional.}
 }
@@ -70,13 +66,14 @@
 \details{
   First the candidate projection directions are defined for
   each data set from the respective center through each
-  data point.  Then the basic algorithm scans all \eqn{n^2}
+  data point.  Then the algorithm scans all \eqn{n^2}
   possible combinations for the maximum correlation, where
   \eqn{n} is the number of observations.
-
-  For larger values of \eqn{n}, the basic algorithm is
-  computationally expensive, thus a faster modification is
-  available as well.
+}
+\note{
+  \code{CCAproj} is a simple wrapper function for
+  \code{ccaProj} for more compatibility with package
+  \pkg{pcaPP} concerning function names.
 }
 \examples{
 ## generate data

@@ -1,5 +1,6 @@
 \name{ccaGrid}
 \alias{ccaGrid}
+\alias{CCAgrid}
 \alias{print.cca}
 \title{(Robust) CCA via alternating series of grid searches}
 \usage{
@@ -8,6 +9,11 @@
     control = list(...), nIterations = 10, nAlternate = 10,
     nGrid = 25, initial = NULL, tol = 1e-06, seed = NULL,
     ...)
+
+  CCAgrid(x, y, k = 1,
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
+    maxiter = 10, maxalter = 10, splitcircle = 25,
+    initial = NULL, zero.tol = 1e-06, seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -31,15 +37,16 @@
   supplied, this takes precedence over additional arguments
   supplied via the \code{\dots} argument.}
 
-  \item{nIterations}{an integer giving the maximum number
-  of iterations.}
+  \item{nIterations,maxiter}{an integer giving the maximum
+  number of iterations.}
 
-  \item{nAlternate}{an integer giving the maximum number of
-  alternate series of grid searches in each iteration.}
+  \item{nAlternate,maxalter}{an integer giving the maximum
+  number of alternate series of grid searches in each
+  iteration.}
 
-  \item{nGrid}{an integer giving the number of equally
-  spaced grid points on the unit circle to use in each grid
-  search.}
+  \item{nGrid,splitcircle}{an integer giving the number of
+  equally spaced grid points on the unit circle to use in
+  each grid search.}
 
   \item{initial}{optional; either an integer vector of
   length two or a list containing two index vectors.  In
@@ -53,8 +60,8 @@
   \code{y}, and vice versa for the second integer (see
   \dQuote{Details}).}
 
-  \item{tol}{a small positive numeric value to be used for
-  determining convergence.}
+  \item{tol,zero.tol}{a small positive numeric value to be
+  used for determining convergence.}
 
   \item{seed}{optional initial seed for the random number
   generator (see \code{\link{.Random.seed}}).  This is only
@@ -116,6 +123,11 @@
   thereby possible to use randomly selected subsets of
   variables, or to specify the subsets of variables
   directly.
+}
+\note{
+  \code{CCAgrid} is a simple wrapper function for
+  \code{ccaGrid} for more compatibility with package
+  \pkg{pcaPP} concerning function and argument names.
 }
 \examples{
 ## generate data

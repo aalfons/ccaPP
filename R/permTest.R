@@ -61,6 +61,7 @@
 #' @keywords multivariate robust
 #' 
 #' @export
+
 permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
