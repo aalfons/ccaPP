@@ -25,6 +25,7 @@ vec l1Median(const mat& x);
 double median(const vec& x);
 double mad(const vec& x, double& center);
 double mad(const vec& x, const double& constant, double& center);
+uvec order(const vec& x, const bool& decreasing);
 uvec order(const vec& x);
 vec rank(const vec& x);
 

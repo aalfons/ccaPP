@@ -304,7 +304,7 @@ void GridControl::findOrder(const mat& x, const vec& y, CorControl corControl,
 		corY(j) = abs(corControl.cor(x.unsafe_col(j), y));
 	}
 	// order columns of x according to absolute correlations with y
-	orderX = order(corY);
+	orderX = order(corY, true);
 	// store maximum correlation and set weight of corresponding variable to 1
 	uword first = orderX(0);
 	maxCor = corY(first);
@@ -368,8 +368,7 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 			}
 		}
 		// compute average absolute correlations
-		avgCorX = mean(corMatX, 1);
-		avgCorY = mean(corMatY, 1);
+		avgCorX = mean(corMatX, 1); avgCorY = mean(corMatY, 1);
 	} else {
 		// compute complete matrix of columnwise absolute correlations
 		corMat.set_size(p, q);
@@ -380,11 +379,11 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 			}
 		}
 		// compute average absolute correlations
-		avgCorX = mean(corMat, 1), avgCorY = mean(corMat, 0).t();
+		avgCorX = mean(corMat, 1); avgCorY = mean(corMat, 0).t();
 	}
 	// determine the order of the variables and the starting values for the
 	// weighting vectors from average correlations
-	orderX = order(avgCorX), orderY = order(avgCorY);
+	orderX = order(avgCorX, true), orderY = order(avgCorY, true);
 	// set weights of corresponding variables to 1 and determine with which
 	// data set to start in alternate grid searches
 	uword firstX = orderX(0),  firstY = orderY(0);

@@ -124,34 +124,75 @@ SEXP R_fastMAD(SEXP R_x, SEXP R_constant) {
 // order and ranks
 // ---------------
 
-// define new data type for sorting
-// .first component is index (type double since ties are broken by averaging)
-// .second component is value
-typedef pair<uword, double> sortData;
+// class definition
+class SortData {
+public:
+	uword index;
+	double value;
 
-// unlike R, C++ returns false in comparisons with NA/NaN
-bool sortDataLess(const sortData& left, const sortData& right) {
-	return left.second < right.second;
+	// constructors
+	SortData();
+	SortData(uword&, const double&);
+//	// overloaded < (is less) operator for sorting and ordering
+//	bool operator< (const SortData&);
+//	// overloaded > (is greater) operator for sorting and ordering
+//	bool operator> (const SortData&);
+};
+
+// constructors
+inline SortData::SortData() {}
+inline SortData::SortData(uword& first, const double& second) {
+	index = first;
+	value = second;
+}
+
+//// overloaded < (is less) operator for sorting and ordering
+//bool SortData::operator< (const SortData& other) {
+//      return (this->value < other.value);
+//}
+
+//// overloaded > (is greater) operator for sorting and ordering
+//bool SortData::operator> (const SortData& other) {
+//      return (this->value > other.value);
+//}
+
+// compare two objects with < (is less) operator for sorting and ordering
+bool sortDataIsLess(const SortData& left, const SortData& right) {
+	return left.value < right.value;
+}
+
+// compare two objects with < (is less) operator for sorting and ordering
+bool sortDataIsGreater(const SortData& left, const SortData& right) {
+	return left.value > right.value;
 }
 
 // compute order of observations
 // stable sorting is not necessary since ties are broken by averaging
-uvec order(const vec& x) {
+uvec order(const vec& x, const bool& decreasing) {
 	// initialize data structure for sorting
 	const uword n = x.n_elem;
-	vector<sortData> foo(n);
+	vector<SortData> foo(n);
 	for(uword i = 0; i < n; i++) {
-		foo[i] = sortData(i, x(i));
+		foo[i] = SortData(i, x(i));
 	}
 	// call STL's sort()
-	sort(foo.begin(), foo.end(), sortDataLess);
+	if(decreasing) {
+		sort(foo.begin(), foo.end(), sortDataIsGreater);
+	} else {
+		sort(foo.begin(), foo.end(), sortDataIsLess);
+	}
 	// construct and return vector of indices
 	uvec indices(n);
 	for(uword i = 0; i < n; i++) {
-		sortData bar = foo[i];
-		indices(i) = bar.first;
+		SortData bar = foo[i];
+		indices(i) = bar.index;
 	}
 	return indices;
+}
+
+// compute increasing order of observations
+uvec order(const vec& x) {
+	return order(x, false);
 }
 
 // compute ranks of observations in a vector
