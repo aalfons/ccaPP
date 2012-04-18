@@ -762,7 +762,9 @@ mat standardize(const mat& x, const bool& robust, vec& scale) {
 	} else {
 		// mean and standard deviation
 		for(uword j = 0; j < p; j++) {
-			vec xj = x.unsafe_col(j);
+			// with unsafe_col(), the original data would be changed when
+			// sweeping out the mean
+			vec xj = x.col(j);
 			double center = mean(xj);				// compute mean
 			xj -= center;							// sweep out mean
 			scale(j) = norm(xj, 2) / (double)(n-1);	// compute SD
