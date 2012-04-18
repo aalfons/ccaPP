@@ -161,7 +161,7 @@ bool sortDataIsLess(const SortData& left, const SortData& right) {
 	return left.value < right.value;
 }
 
-// compare two objects with < (is less) operator for sorting and ordering
+// compare two objects with > (is greater) operator for sorting and ordering
 bool sortDataIsGreater(const SortData& left, const SortData& right) {
 	return left.value > right.value;
 }
