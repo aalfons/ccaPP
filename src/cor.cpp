@@ -258,16 +258,20 @@ double corM(const vec& x, const vec& y, const double& prob,
 		} else {
 			error("method not available");	// should never happen
 		}
-		// build initial covariance matrix
-		covMat(0, 0) = mad(x, centerX);
-		covMat(1, 1) = mad(y, centerY);
-		covMat(1, 0) = r * sqrt(covMat(0, 0) * covMat(1, 1));
-		covMat(0, 1) = covMat(1, 0);
-		xy = join_rows(x - centerX, y - centerY);	// centered x and y
+		if((1 - abs(r)) > tol) {
+			// covariance matrix would be singular otherwise
+			// build initial covariance matrix
+			covMat(0, 0) = mad(x, centerX);
+			covMat(1, 1) = mad(y, centerY);
+			covMat(1, 0) = r * sqrt(covMat(0, 0) * covMat(1, 1));
+			covMat(0, 1) = covMat(1, 0);
+			xy = join_rows(x - centerX, y - centerY);	// centered x and y
+		}
 	}
 	// iteratively compute M-estimator
 	double previousFisherZ = R_NegInf, fisherZ = atanh(r);	// Fisher transform
-	while(abs(fisherZ - previousFisherZ) > tol) {
+	while((abs(fisherZ - previousFisherZ) > tol) && ((1 - abs(r)) > tol)) {
+		// second condition ensures that covariance matrix is not singular
 		// compute Mahalanobis distances
 		mat invCovMat = inv(covMat);			// inverse covariance matrix
 		vec md = sum((xy * invCovMat) % xy, 1);	// squared Mahalanobis distances
