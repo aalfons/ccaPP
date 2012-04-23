@@ -240,63 +240,65 @@ double corM(const vec& x, const vec& y, const double& prob,
 	// compute initial center, covariance matrix and correlation
 	double centerX, centerY, r;
 	mat xy(n, 2), covMat(2, 2);
+	// compute initial correlation
 	if(initial == "pearson") {
-		centerX = mean(x); centerY = mean(y);		// means of x and y
-		xy = join_rows(x - centerX, y - centerY);	// centered x and y
-		covMat = cov(xy);							// covariance matrix
-		r = covMat(1, 0) / sqrt(covMat(0, 0)*covMat(1, 1));	// correlation
+		r = corPearson(x, y);
+	} else if(initial == "quadrant") {
+		r = corQuadrant(x, y, true);
+	} else if(initial == "spearman") {
+		r = corSpearman(x, y, true);
+	} else if(initial == "kendall") {
+		r = corKendall(x, y, true);
+	} else if(initial == "spearman") {
+		r = corSpearman(x, y, true);
 	} else {
-		// compute initial correlation
-		if(initial == "quadrant") {
-			r = corQuadrant(x, y, true);
-		} else if(initial == "spearman") {
-			r = corSpearman(x, y, true);
-		} else if(initial == "kendall") {
-			r = corKendall(x, y, true);
-		} else if(initial == "spearman") {
-			r = corSpearman(x, y, true);
-		} else {
-			error("method not available");	// should never happen
-		}
-		if((1 - abs(r)) > tol) {
-			// covariance matrix would be singular otherwise
-			// build initial covariance matrix
-			covMat(0, 0) = mad(x, centerX);
-			covMat(1, 1) = mad(y, centerY);
-			covMat(1, 0) = r * sqrt(covMat(0, 0) * covMat(1, 1));
-			covMat(0, 1) = covMat(1, 0);
-			xy = join_rows(x - centerX, y - centerY);	// centered x and y
-		}
+		error("method not available");	// should never happen
 	}
-	// iteratively compute M-estimator
-	double previousFisherZ = R_NegInf, fisherZ = atanh(r);	// Fisher transform
-	while((abs(fisherZ - previousFisherZ) > tol) && ((1 - abs(r)) > tol)) {
-		// second condition ensures that covariance matrix is not singular
-		// compute Mahalanobis distances
-		mat invCovMat = inv(covMat);			// inverse covariance matrix
-		vec md = sum((xy * invCovMat) % xy, 1);	// squared Mahalanobis distances
-		// compute weights based on Mahalanobis distances
-		vec w(n);
-		for(uword i = 0; i < n; i++) {
-			if(md(i) > d) {
-				w(i) = sqrt(d / md(i));
-			} else {
-				w(i) = 1;
-			}
+	if((1 - abs(r)) > tol) {
+		// covariance matrix would be singular otherwise
+		// build initial covariance matrix
+		if(initial == "pearson") {
+			centerX = mean(x); centerY = mean(y);	// means of x and y
+			covMat(0, 0) = var(x);
+			covMat(1, 1) = var(y);
+
+		} else {
+			covMat(0, 0) = pow(mad(x, centerX), 2);
+			covMat(1, 1) = pow(mad(y, centerY), 2);
 		}
-		// update location estimates
-		double sumW = sum(w);
-		centerX = dot(w, x) / sumW;
-		centerY = dot(w, y) / sumW;
+		covMat(1, 0) = r * sqrt(covMat(0, 0) * covMat(1, 1));
+		covMat(0, 1) = covMat(1, 0);
 		xy = join_rows(x - centerX, y - centerY);	// centered x and y
-		// update scatter matrix
-		mat wxy = join_rows(w % xy.unsafe_col(0), w % xy.unsafe_col(1));
-		covMat = trans(wxy) * wxy / (n * prob);
-		// update correlation
-		r = covMat(1, 0) / sqrt(covMat(0, 0) * covMat(1, 1));
-		// compute Fisher transformation
-		previousFisherZ = fisherZ;
-		fisherZ = atanh(r);
+		// iteratively compute M-estimator
+		double previousFisherZ = R_NegInf, fisherZ = atanh(r);	// Fisher transform
+		while((abs(fisherZ - previousFisherZ) > tol) && ((1 - abs(r)) > tol)) {
+			// second condition ensures that covariance matrix is not singular
+			// compute Mahalanobis distances
+			mat invCovMat = inv(covMat);			// inverse covariance matrix
+			vec md = sum((xy * invCovMat) % xy, 1);	// squared Mahalanobis distances
+			// compute weights based on Mahalanobis distances
+			vec w(n);
+			for(uword i = 0; i < n; i++) {
+				if(md(i) > d) {
+					w(i) = sqrt(d / md(i));
+				} else {
+					w(i) = 1;
+				}
+			}
+			// update location estimates
+			double sumW = sum(w);
+			centerX = dot(w, x) / sumW;
+			centerY = dot(w, y) / sumW;
+			xy = join_rows(x - centerX, y - centerY);	// centered x and y
+			// update scatter matrix
+			mat wxy = join_rows(w % xy.unsafe_col(0), w % xy.unsafe_col(1));
+			covMat = trans(wxy) * wxy / (n * prob);
+			// update correlation
+			r = covMat(1, 0) / sqrt(covMat(0, 0) * covMat(1, 1));
+			// compute Fisher transformation
+			previousFisherZ = fisherZ;
+			fisherZ = atanh(r);
+		}
 	}
 	return r;
 }
