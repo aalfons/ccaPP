@@ -317,6 +317,7 @@ ccaPP <- function(x, y, k = 1,
         cca <- .Call("R_ccaPP", R_x=x, R_y=y, R_k=k, R_method=method, 
             R_corControl=corControl, R_algorithm=algorithm, 
             R_ppControl=ppControl, PACKAGE="ccaPP")
+        cca$cor <- drop(cca$cor)
     }
     ## assign class and return results
     class(cca) <- "cca"

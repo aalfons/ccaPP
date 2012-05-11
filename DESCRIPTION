@@ -2,7 +2,7 @@ Package: ccaPP
 Type: Package
 Title: (Robust) canonical correlation analysis via projection pursuit
 Version: 0.1.0
-Date: 2012-04-23
+Date: 2012-05-11
 Author: Andreas Alfons
 Maintainer: Andreas Alfons
     <andreas.alfons@econ.kuleuven.be>

@@ -921,8 +921,8 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 	}
 	// wrap and return result
 	return List::create(
-			Named("cor") = wrap(r.memptr(), r.memptr()+r.n_elem),
-			Named("A") = wrap(A),
-			Named("B") = wrap(B)
+			Named("cor") = r,
+			Named("A") = A,
+			Named("B") = B
 			);
 }
