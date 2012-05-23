@@ -22,7 +22,7 @@ print.permTest <- function(x, ...) {
     # print general statement
     cat("\nPermutation test for independence\n\n")
     # print maximum correlation and p-value
-    cat(sprintf("p = %f, p-value = %f\n", x$cor0, x$pValue))
+    cat(sprintf("r = %f, p-value = %f\n", x$cor0, x$pValue))
     # print number of random permuations
     cat(sprintf("R = %d random permuations\n", x$R))
     # print alternative hypothesis
