@@ -765,10 +765,10 @@ mat standardize(const mat& x, const bool& robust, vec& scale) {
 			// with unsafe_col(), the original data would be changed when
 			// sweeping out the mean
 			vec xj = x.col(j);
-			double center = mean(xj);				// compute mean
-			xj -= center;							// sweep out mean
-			scale(j) = norm(xj, 2) / (double)(n-1);	// compute SD
-			xs.col(j) = xj / scale(j);				// sweep out SD
+			double center = mean(xj);						// compute mean
+			xj -= center;									// sweep out mean
+			scale(j) = norm(xj, 2) / sqrt((double)(n-1));	// compute SD
+			xs.col(j) = xj / scale(j);						// sweep out SD
 		}
 	}
 	return xs;
