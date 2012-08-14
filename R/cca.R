@@ -110,7 +110,6 @@
 #' 
 #' @import Rcpp
 #' @import RcppArmadillo
-#' @import pcaPP
 #' @useDynLib ccaPP
 #' @export
 

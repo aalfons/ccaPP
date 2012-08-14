@@ -3,8 +3,8 @@
  *         KU Leuven
  */
 
-#ifndef _fastCor_COR_H
-#define _fastCor_COR_H
+#ifndef _ccaPP_COR_H
+#define _ccaPP_COR_H
 
 #define ARMA_NO_DEBUG
 

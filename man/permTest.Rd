@@ -30,7 +30,10 @@
 
   \item{seed}{optional integer giving the initial seed for
   the random number generator (see
-  \code{\link{.Random.seed}}).}
+  \code{\link{.Random.seed}}).  For parallel computing,
+  random number streams are used rather than the standard
+  random number generator and the seed is set via
+  \code{\link{clusterSetRNGStream}}.}
 
   \item{\dots}{additional arguments to be passed to
   \code{ccaFun}.}
