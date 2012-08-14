@@ -49,6 +49,7 @@
 
 using namespace Rcpp;
 using namespace arma;
+using namespace std;
 
 
 /* Sorts in place, returns the bubble sort distance between the input array
@@ -216,15 +217,19 @@ double kendallNlogN(double* arr1, double* arr2, size_t len, int cor) {
 
 // wrapper for arma data structures
 double fastCorKendall(const vec& x, const vec& y, const uword& n) {
-	// order observations according to first vector and copy the data in the
-	// right order to double arrays
+	// order observations according to first vector
 	uvec orderX = order(x);
-	double arrayX[n], arrayY[n];
+//	// copy the data in the right order into double arrays
+//	double arrayX[n], arrayY[n];
+	// variable length arrays are not part of the C++98 standard and should be
+	// replaced with STL vectors (see Plummer 2011, R Journal)
+	vector<double> arrayX(n), arrayY(n);
 	for(uword i = 0; i < n; i++) {
 		arrayX[i] = x(orderX(i));
 		arrayY[i] = y(orderX(i));
 	}
 	// define pointers to arrays and call the original function
-	double *ptArrayX = arrayX, *ptArrayY = arrayY;
-	return kendallNlogN(ptArrayX, ptArrayY, n, 1);
+//	double *ptArrayX = arrayX, *ptArrayY = arrayY;
+//	return kendallNlogN(ptArrayX, ptArrayY, n, 1);
+	return kendallNlogN(&arrayX[0], &arrayY[0], n, 1);
 }

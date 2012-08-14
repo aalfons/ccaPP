@@ -22,7 +22,7 @@ checkIndices <- function(indices, max) {
 fastRank <- function(x) {
     x <- as.numeric(x)
     if(length(x) == 0) return(numeric())        # zero length vector
-    .Call("R_rank", R_x=x, PACKAGE="fastCor")   # call C++ function
+    .Call("R_rank", R_x=x, PACKAGE="ccaPP")   # call C++ function
 }
 
 ## get list of control arguments for correlation function
