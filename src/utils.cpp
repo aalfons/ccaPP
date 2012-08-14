@@ -19,9 +19,6 @@ using namespace std;
 // -----------------------------
 
 // get the number of processor cores
-// parallel computing is only implemented on the R level for the permutation
-// test.  there is no parallel computing on the C++ level, hence it is not
-// necessary set the compiler flags for OpenMP.
 SEXP R_getNumProcs() {
 	return wrap(omp_get_num_procs());
 }
