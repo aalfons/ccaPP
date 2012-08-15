@@ -41,7 +41,8 @@ permTest                (Robust) permutation test for independence
 }
 }
 \author{
-Andreas Alfons [aut, cre]
+Andreas Alfons [aut, cre],
+  David Simcha [ctb]
 
 Maintainer: Andreas Alfons <andreas.alfons@econ.kuleuven.be>
 }
