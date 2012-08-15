@@ -2,3 +2,6 @@ Changes in ccaPP version 0.1.1
 
     + Using package parallel now to detect the number of available processor 
       cores rather than OpenMP.
+    
+    + Internally created parallel cluster in permTest() is now stopped via 
+      on.exit().
