@@ -83,7 +83,7 @@ permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, nCores = 1, cl = NULL,
     }
     R <- rep(as.integer(R), length.out=1)
     if(is.na(R)) R <- formals()$R
-    if(is.na(nCores)) nCores <- getNumProcs()  # use all available cores
+    if(is.na(nCores)) nCores <- detectCores()  # use all available cores
     if(!is.numeric(nCores) || is.infinite(nCores) || nCores < 1) {
         nCores <- 1  # use default value
         warning("invalid value of 'nCores'; using default value")
