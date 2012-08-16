@@ -15,7 +15,7 @@ Canonical correlation analysis via projection pursuit and fast
 Package: \tab ccaPP\cr
 Type: \tab Package\cr
 Version: \tab 0.1.1\cr
-Date: \tab 2012-08-15\cr
+Date: \tab 2012-08-16\cr
 Depends: \tab Rcpp (>= 0.9.10), parallel, pcaPP (>= 1.8-1)\cr
 Imports: \tab RcppArmadillo (>= 0.2.36)\cr
 LinkingTo: \tab Rcpp, RcppArmadillo\cr
@@ -42,7 +42,7 @@ permTest                (Robust) permutation test for independence
 }
 \author{
 Andreas Alfons [aut, cre],
-  David Simcha [ctb]
+  David Simcha [aut]
 
 Maintainer: Andreas Alfons <andreas.alfons@kuleuven.be>
 }

@@ -103,8 +103,8 @@ permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, nCores = 1, cl = NULL,
     # set seed of random number generator
     if(useParallel) {
         # set seed of the random number stream
-        if(is.null(seed)) clusterSetRNGStream(cl)
-        else clusterSetRNGStream(cl, iseed=seed)
+        if(!is.null(seed)) clusterSetRNGStream(cl, iseed=seed)
+        else if(haveNCores) clusterSetRNGStream(cl)
     } else {
         # check or set seed of the random number generator
         if(is.null(seed)) {
