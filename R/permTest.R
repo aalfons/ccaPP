@@ -91,8 +91,7 @@ permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, nCores = 1, cl = NULL,
     nCores <- min(nCores, R)
     # check whether parallel computing should be used
     haveNCores <- nCores > 1
-    haveCl <- !is.null(cl)
-    useParallel <- haveNCores || haveCl
+    useParallel <- haveNCores || !is.null(cl)
     # set up multicore or snow cluster if not supplied
     if(haveNCores) {
         if(.Platform$OS.type == "windows") {
