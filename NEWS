@@ -1,3 +1,9 @@
+Changes in ccaPP version 0.1.2
+
+    + permTest(): argument 'cl' is now preferred over argument 'ncores' for 
+      parallel computing.
+
+
 Changes in ccaPP version 0.1.1
 
     + Using package parallel now to detect the number of available processor 
