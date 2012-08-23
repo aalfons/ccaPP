@@ -68,7 +68,9 @@
 #' the numbers of variables of each data set to be randomly selected for 
 #' determining the order of the variables of the respective other data set.
 #' @param \dots  additional arguments to be passed to the specified correlation 
-#' functional.
+#' functional.  Currently, this is only relevant for the M-estimator.  For 
+#' Spearman, Kendall and quadrant correlation, consistency at the normal model 
+#' is always forced.
 #' 
 #' @returnClass cca
 #' @returnItem cor  a numeric vector giving the canonical correlation 
@@ -101,7 +103,6 @@
 #' 
 #' ## Spearman correlation
 #' ccaGrid(x, y, method = "spearman")
-#' ccaGrid(x, y, method = "spearman", consistent = TRUE)
 #' 
 #' ## Pearson correlation
 #' ccaGrid(x, y, method = "pearson")
@@ -141,9 +142,14 @@ CCAgrid <- function(x, y, k = 1,
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         maxiter = 10, maxalter = 10, splitcircle = 25, select=NULL, 
         zero.tol = 1e-06, seed = NULL, ...) {
+    ## initializations
+    matchedCall <- match.call()
     ## call ccaGrid()
-    ccaGrid(x, y, k=k, method=method, nIterations=maxiter, nAlternate=maxalter, 
-        nGrid=splitcircle, select=select, tol=zero.tol, seed=seed, ...)
+    cca <- ccaGrid(x, y, k=k, method=method, nIterations=maxiter, 
+        nAlternate=maxalter, nGrid=splitcircle, select=select, 
+        tol=zero.tol, seed=seed, ...)
+    cca$call <- matchedCall
+    cca
 }
 
 
@@ -176,7 +182,9 @@ CCAgrid <- function(x, y, k = 1,
 #' (columnwise means if \code{method} is \code{"pearson"} and columnwise 
 #' medians otherwise).
 #' @param \dots  additional arguments to be passed to the specified correlation 
-#' functional.
+#' functional.  Currently, this is only relevant for the M-estimator.  For 
+#' Spearman, Kendall and quadrant correlation, consistency at the normal model 
+#' is always forced.
 #' 
 #' @returnClass cca
 #' @returnItem cor  a numeric vector giving the canonical correlation 
@@ -208,7 +216,6 @@ CCAgrid <- function(x, y, k = 1,
 #' 
 #' ## Spearman correlation
 #' ccaProj(x, y, method = "spearman")
-#' ccaProj(x, y, method = "spearman", consistent = TRUE)
 #' 
 #' ## Pearson correlation
 #' ccaProj(x, y, method = "pearson")
@@ -242,16 +249,20 @@ ccaProj <- function(x, y, k = 1,
 CCAproj <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         useL1Median = TRUE, ...) {
-    ## call ccaGrid()
-    ccaGrid(x, y, k=k, method=method, useL1Median=useL1Median, ...)
+    ## initializations
+    matchedCall <- match.call()
+    ## call ccaProj()
+    cca <- ccaProj(x, y, k=k, method=method, useL1Median=useL1Median, ...)
+    cca$call <- matchedCall
+    cca
 }
 
 
-## workhorse function
+## workhorse function for canonical correlation analysis and maximum correlation
 ccaPP <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        corControl, algorithm = c("grid", "proj"), ppControl, 
-        seed = NULL) {
+        corControl, forceConsistency = TRUE, algorithm = c("grid", "proj"), 
+        ppControl, seed = NULL) {
     ## initializations
     matchedCall <- match.call()
     x <- as.matrix(x)
@@ -274,7 +285,7 @@ ccaPP <- function(x, y, k = 1,
     } else {
         # check method and get list of control arguments
         method <- match.arg(method)
-        corControl <- getCorControl(method, corControl)
+        corControl <- getCorControl(method, corControl, forceConsistency)
         # additional checks for grid search algorithm
         if(algorithm == "grid") {
             # check subset of variables to be used for determining the order of 

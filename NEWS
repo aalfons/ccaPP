@@ -1,7 +1,13 @@
-Changes in ccaPP version 0.1.2
+Changes in ccaPP version 0.2.0
 
+    + Functions for CCA now force consistency of Spearman, Kendall and 
+      quadrant correlation.
+    
+    + Bugfix in CCAproj(): now correctly wrapped around ccaProj().
+    
     + permTest(): argument 'cl' is now preferred over argument 'ncores' for 
       parallel computing.
+
 
 
 Changes in ccaPP version 0.1.1

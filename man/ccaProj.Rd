@@ -41,7 +41,10 @@
   and columnwise medians otherwise).}
 
   \item{\dots}{additional arguments to be passed to the
-  specified correlation functional.}
+  specified correlation functional.  Currently, this is
+  only relevant for the M-estimator.  For Spearman, Kendall
+  and quadrant correlation, consistency at the normal model
+  is always forced.}
 }
 \value{
   An object of class \code{"cca"} with the following
@@ -89,7 +92,6 @@ y <- xy[, (p+1):m]
 
 ## Spearman correlation
 ccaProj(x, y, method = "spearman")
-ccaProj(x, y, method = "spearman", consistent = TRUE)
 
 ## Pearson correlation
 ccaProj(x, y, method = "pearson")

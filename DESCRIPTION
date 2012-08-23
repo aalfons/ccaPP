@@ -1,10 +1,8 @@
 Package: ccaPP
 Type: Package
 Title: (Robust) canonical correlation analysis via projection pursuit
-Version: 0.1.2
-Date: 2012-08-20
-Authors@R: c(person("Andreas", "Alfons", email = "andreas.alfons@kuleuven.be",
-    role = c("aut", "cre")), person("David", "Simcha", role = "aut"))
+Version: 0.2.0
+Date: 2012-08-24
 Depends:
     Rcpp (>= 0.9.10),
     parallel,
@@ -19,6 +17,8 @@ Description: Canonical correlation analysis via projection pursuit and fast
     nonparametric methods.
 License: GPL (>= 2)
 LazyLoad: yes
+Authors@R: c(person("Andreas", "Alfons", email = "andreas.alfons@kuleuven.be",
+    role = c("aut", "cre")), person("David", "Simcha", role = "ctb"))
 Collate:
     'cca.R'
     'cor.R'
