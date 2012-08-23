@@ -24,7 +24,7 @@ Collate:
     'cor.R'
     'fastMAD.R'
     'fastMedian.R'
+    'maxCor.R'
     'permTest.R'
     'print.R'
     'utils.R'
-    'maxCor.R'
