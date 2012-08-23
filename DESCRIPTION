@@ -12,9 +12,9 @@ Imports:
 LinkingTo: Rcpp, RcppArmadillo
 Suggests:
     mvtnorm
-Description: Canonical correlation analysis via projection pursuit and fast
-    implementations of correlation estimators, with a focus on robust and
-    nonparametric methods.
+Description: Canonical correlation analysis and maximum correlation via
+    projection pursuit, as well as fast implementations of correlation
+    estimators, with a focus on robust and nonparametric methods.
 License: GPL (>= 2)
 LazyLoad: yes
 Authors@R: c(person("Andreas", "Alfons", email = "andreas.alfons@kuleuven.be",
@@ -27,3 +27,4 @@ Collate:
     'permTest.R'
     'print.R'
     'utils.R'
+    'maxCor.R'

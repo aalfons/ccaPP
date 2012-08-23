@@ -87,7 +87,8 @@
 #' 
 #' @author Andreas Alfons
 #' 
-#' @seealso \code{\link{ccaProj}}, \code{\link{corFunctions}}
+#' @seealso \code{\link{ccaProj}}, \code{\link{maxCorGrid}}, 
+#' \code{\link{corFunctions}}
 #' 
 #' @examples 
 #' ## generate data
@@ -200,7 +201,8 @@ CCAgrid <- function(x, y, k = 1,
 #' 
 #' @author Andreas Alfons
 #' 
-#' @seealso \code{\link{ccaGrid}} \code{\link{corFunctions}}
+#' @seealso \code{\link{ccaGrid}}, \code{\link{maxCorProj}}, 
+#' \code{\link{corFunctions}}
 #' 
 #' @examples 
 #' ## generate data
@@ -258,13 +260,12 @@ CCAproj <- function(x, y, k = 1,
 }
 
 
-## workhorse function for canonical correlation analysis and maximum correlation
+## workhorse function
 ccaPP <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         corControl, forceConsistency = TRUE, algorithm = c("grid", "proj"), 
         ppControl, seed = NULL) {
     ## initializations
-    matchedCall <- match.call()
     x <- as.matrix(x)
     y <- as.matrix(y)
     n <- nrow(x)

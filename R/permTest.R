@@ -18,10 +18,11 @@
 #' 
 #' @param x,y  each can be a numeric vector, matrix or data frame.
 #' @param R  an integer giving the number of random permutations to be used.
-#' @param ccaFun  a function to compute a maximum correlation measure between 
-#' two data sets, e.g., \code{\link{ccaGrid}} (the default) or 
-#' \code{\link{ccaProj}}.  It should expect the data to be passed as the first 
-#' and second argument, and must return an object of class \code{"cca"}.
+#' @param fun  a function to compute a maximum correlation measure between 
+#' two data sets, e.g., \code{\link{maxCorGrid}} (the default) or 
+#' \code{\link{maxCorProj}}.  It should expect the data to be passed as the 
+#' first and second argument, and must return an object of class 
+#' \code{"maxCor"}.
 #' @param nCores  a positive integer giving the number of processor cores to be 
 #' used for parallel computing (the default is 1 for no parallelization).  If 
 #' this is set to \code{NA}, all available processor cores are used.
@@ -32,7 +33,7 @@
 #' generator (see \code{\link{.Random.seed}}).  For parallel computing, random 
 #' number streams are used rather than the standard random number generator and 
 #' the seed is set via \code{\link{clusterSetRNGStream}}.
-#' @param \dots  additional arguments to be passed to \code{ccaFun}.
+#' @param \dots  additional arguments to be passed to \code{fun}.
 #' 
 #' @returnClass permTest
 #' @returnItem pValue  the \eqn{p}-value for the test.
@@ -45,7 +46,7 @@
 #' 
 #' @author Andreas Alfons
 #' 
-#' @seealso \code{\link{ccaGrid}}, \code{\link{ccaProj}}
+#' @seealso \code{\link{maxCorGrid}}, \code{\link{maxCorProj}}
 #' 
 #' @examples 
 #' ## generate data
@@ -71,7 +72,7 @@
 #' @import parallel
 #' @export
 
-permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, nCores = 1, cl = NULL, 
+permTest <- function(x, y, R = 1000, fun = maxCorGrid, nCores = 1, cl = NULL, 
         seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
@@ -121,11 +122,11 @@ permTest <- function(x, y, R = 1000, ccaFun = ccaGrid, nCores = 1, cl = NULL,
     ## define function call to compute maximum correlation
     dots <- list(...)
     if(length(dots) == 0) {
-        call <- as.call(list(ccaFun))
+        call <- as.call(list(fun))
         call[[2]] <- x
         call[[3]] <- y
     } else {
-        call <- as.call(c(list(ccaFun, x, y), dots))
+        call <- as.call(c(list(fun, x, y), dots))
     }
     ## compute maximum correlation and bootstrap replicates
     ## in the bootstrap replicates, permute rows of x and compute maximum 

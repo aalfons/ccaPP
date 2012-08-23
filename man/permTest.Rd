@@ -2,7 +2,7 @@
 \alias{permTest}
 \title{(Robust) permutation test for independence}
 \usage{
-  permTest(x, y, R = 1000, ccaFun = ccaGrid, nCores = 1,
+  permTest(x, y, R = 1000, fun = maxCorGrid, nCores = 1,
     cl = NULL, seed = NULL, ...)
 }
 \arguments{
@@ -12,12 +12,12 @@
   \item{R}{an integer giving the number of random
   permutations to be used.}
 
-  \item{ccaFun}{a function to compute a maximum correlation
+  \item{fun}{a function to compute a maximum correlation
   measure between two data sets, e.g.,
-  \code{\link{ccaGrid}} (the default) or
-  \code{\link{ccaProj}}.  It should expect the data to be
-  passed as the first and second argument, and must return
-  an object of class \code{"cca"}.}
+  \code{\link{maxCorGrid}} (the default) or
+  \code{\link{maxCorProj}}.  It should expect the data to
+  be passed as the first and second argument, and must
+  return an object of class \code{"maxCor"}.}
 
   \item{nCores}{a positive integer giving the number of
   processor cores to be used for parallel computing (the
@@ -36,7 +36,7 @@
   \code{\link{clusterSetRNGStream}}.}
 
   \item{\dots}{additional arguments to be passed to
-  \code{ccaFun}.}
+  \code{fun}.}
 }
 \value{
   An object of class \code{"permTest"} with the following
@@ -93,7 +93,7 @@ permTest(x, y, R=100, method = "pearson")
   Andreas Alfons
 }
 \seealso{
-  \code{\link{ccaGrid}}, \code{\link{ccaProj}}
+  \code{\link{maxCorGrid}}, \code{\link{maxCorProj}}
 }
 \keyword{multivariate}
 \keyword{robust}

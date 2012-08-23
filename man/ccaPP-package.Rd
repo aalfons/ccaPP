@@ -6,9 +6,9 @@
 (Robust) canonical correlation analysis via projection pursuit
 }
 \description{
-Canonical correlation analysis via projection pursuit and fast
-    implementations of correlation estimators, with a focus on robust and
-    nonparametric methods.
+Canonical correlation analysis and maximum correlation via 
+    projection pursuit, as well as fast implementations of correlation
+    estimators, with a focus on robust and nonparametric methods.
 }
 \details{
 \tabular{ll}{
@@ -37,6 +37,10 @@ corFunctions            Fast implementations of (robust) correlation
 fastMAD                 Fast implementation of the median absolute
                         deviation
 fastMedian              Fast implementation of the median
+maxCorGrid              (Robust) maximum correlation via alternating
+                        series of grid searches
+maxCorProj              (Robust) maximum correlation via projections
+                        through the data points
 permTest                (Robust) permutation test for independence
 }
 }
