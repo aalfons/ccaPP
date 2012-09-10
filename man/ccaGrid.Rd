@@ -7,13 +7,14 @@
   ccaGrid(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
-    nGrid = 25, select = NULL, tol = 1e-06, seed = NULL,
-    ...)
+    nGrid = 25, select = NULL, tol = 1e-06,
+    fallback = FALSE, seed = NULL, ...)
 
   CCAgrid(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     maxiter = 10, maxalter = 10, splitcircle = 25,
-    select = NULL, zero.tol = 1e-06, seed = NULL, ...)
+    select = NULL, zero.tol = 1e-06, fallback = FALSE,
+    seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -62,6 +63,16 @@
 
   \item{tol,zero.tol}{a small positive numeric value to be
   used for determining convergence.}
+
+  \item{fallback}{logical; if a correlation functional
+  other than the Pearson correlation is maximized, the data
+  are first robustly standardized via median and MAD.  This
+  indicates whether standardization via mean and standard
+  deviation should be performed as a fallback mode for
+  variables whose MAD is zero (e.g., for dummy variables).
+  Note that if the Pearson correlation is maximized, the
+  data are always standardized via mean and standard
+  deviation.}
 
   \item{seed}{optional initial seed for the random number
   generator (see \code{\link{.Random.seed}}).  This is only

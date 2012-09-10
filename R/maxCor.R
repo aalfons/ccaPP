@@ -61,6 +61,13 @@
 #' the second integer (see \dQuote{Details}).
 #' @param tol  a small positive numeric value to be used for determining 
 #' convergence.
+#' @param fallback  logical; if a correlation functional other than the 
+#' Pearson correlation is maximized, the data are first robustly standardized 
+#' via median and MAD.  This indicates whether standardization via mean and 
+#' standard deviation should be performed as a fallback mode for variables 
+#' whose MAD is zero (e.g., for dummy variables).  Note that if the Pearson 
+#' correlation is maximized, the data are always standardized via mean and 
+#' standard deviation.
 #' @param seed  optional initial seed for the random number generator (see 
 #' \code{\link{.Random.seed}}).  This is only used if \code{select} specifies 
 #' the numbers of variables of each data set to be randomly selected for 
@@ -108,7 +115,7 @@
 maxCorGrid <- function(x, y, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
         control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
-        select = NULL, tol = 1e-06, seed = NULL, ...) {
+        select = NULL, tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
     ## initializations
     matchedCall <- match.call()
     ## define list of control arguments for algorithm
@@ -120,7 +127,8 @@ maxCorGrid <- function(x, y,
         nGrid=nGrid, select=select, tol=tol)
     ## call workhorse function
     maxCor <- maxCorPP(x, y, method=method, corControl=control, 
-        algorithm="grid", ppControl=ppControl)
+        algorithm="grid", ppControl=ppControl, fallback=fallback, 
+        seed=seed)
     maxCor$call <- matchedCall
     maxCor
 }
@@ -153,6 +161,13 @@ maxCorGrid <- function(x, y,
 #' \code{TRUE}).  If \code{FALSE}, the columnwise centers are used instead 
 #' (columnwise means if \code{method} is \code{"pearson"} and columnwise 
 #' medians otherwise).
+#' @param fallback  logical; if a correlation functional other than the 
+#' Pearson correlation is maximized, the data are first robustly standardized 
+#' via median and MAD.  This indicates whether standardization via mean and 
+#' standard deviation should be performed as a fallback mode for variables 
+#' whose MAD is zero (e.g., for dummy variables).  Note that if the Pearson 
+#' correlation is maximized, the data are always standardized via mean and 
+#' standard deviation.
 #' @param \dots  additional arguments to be passed to the specified correlation 
 #' functional.
 #' 
@@ -196,14 +211,14 @@ maxCorGrid <- function(x, y,
 
 maxCorProj <- function(x, y, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        control = list(...), useL1Median = TRUE, ...) {
+        control = list(...), useL1Median = TRUE, fallback = FALSE, ...) {
     ## initializations
     matchedCall <- match.call()
     ## define list of control arguments for algorithm
     ppControl <- list(useL1Median=isTRUE(useL1Median))
     ## call workhorse function
     maxCor <- maxCorPP(x, y, method=method, corControl=control, 
-        algorithm="proj", ppControl=ppControl)
+        algorithm="proj", ppControl=ppControl, fallback=fallback)
     maxCor$call <- matchedCall
     maxCor
 }

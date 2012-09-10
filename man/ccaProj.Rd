@@ -5,11 +5,12 @@
 \usage{
   ccaProj(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
-    control = list(...), useL1Median = TRUE, ...)
+    control = list(...), useL1Median = TRUE,
+    fallback = FALSE, ...)
 
   CCAproj(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
-    useL1Median = TRUE, ...)
+    useL1Median = TRUE, fallback = FALSE, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -39,6 +40,16 @@
   \code{FALSE}, the columnwise centers are used instead
   (columnwise means if \code{method} is \code{"pearson"}
   and columnwise medians otherwise).}
+
+  \item{fallback}{logical; if a correlation functional
+  other than the Pearson correlation is maximized, the data
+  are first robustly standardized via median and MAD.  This
+  indicates whether standardization via mean and standard
+  deviation should be performed as a fallback mode for
+  variables whose MAD is zero (e.g., for dummy variables).
+  Note that if the Pearson correlation is maximized, the
+  data are always standardized via mean and standard
+  deviation.}
 
   \item{\dots}{additional arguments to be passed to the
   specified correlation functional.  Currently, this is
