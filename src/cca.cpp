@@ -407,9 +407,10 @@ void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
 // search is cut in half
 // i ....... iteration of grid search
 vec GridControl::getGrid(const uword& i) {
+	const int j = int(i);	// prevents error on OS X
 	vec grid(nGrid);
-	grid(0) = - M_PI / pow(2, i);	// lower end point of grid
-	double step = M_PI / (nGrid * pow(2, i-1));	// step size
+	grid(0) = - M_PI / pow(2.0, j);	// lower end point of grid
+	double step = M_PI / (nGrid * pow(2.0, j-1));	// step size
 	for(uword k = 1; k < nGrid; k++) {
 		grid(k) = grid(k-1) + step;	// iteratively add step size to define grid
 	}
