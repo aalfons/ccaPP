@@ -587,7 +587,11 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 	// check direction
 	double r = corControl.cor(x * a, y * b);
 	if(r < 0) {
-		b = -b;
+		if((p > 1) && (q == 1)) {
+			a = -a;
+		} else {
+			b = -b;
+		}
 	}
 	// return maximum correlation
 	return maxCor;
