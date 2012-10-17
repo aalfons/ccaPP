@@ -142,33 +142,32 @@ ccaGrid <- function(x, y, k = 1,
     cca
 }
 
-#' @rdname ccaGrid
-#' @export
-sccaGrid <- function(x, y, k = 1, lambda = 0, 
-    method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-    control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
-    select = NULL, tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
-  ## initializations
-  matchedCall <- match.call()
-  ## define list of control arguments for algorithm
-  lambda <- rep(as.numeric(lambda), length.out=2)
-  lambda[is.na(lambda)] <- formals()$lambda
-  nIterations <- as.integer(nIterations)
-  nAlternate <- as.integer(nAlternate)
-  nGrid <- as.integer(nGrid)
-  tol <- as.numeric(tol)
-  ppControl <- list(lambda=lambda, nIterations=nIterations, 
-      nAlternate=nAlternate, nGrid=nGrid, select=select, tol=tol)
-  ## call workhorse function
-  cca <- ccaPP(x, y, k, method=method, corControl=control, algorithm="sparse", 
-      ppControl=ppControl, fallback=fallback, seed=seed)
-  cca$lambda <- lambda
-  cca$call <- matchedCall
-  cca
-}
 
+# @rdname ccaGrid
+# @export
 
-## wrapper functions for more compatibility with package pcaPP
+#sccaGrid <- function(x, y, k = 1, lambda = 0, 
+#    method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+#    control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
+#    select = NULL, tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
+#  ## initializations
+#  matchedCall <- match.call()
+#  ## define list of control arguments for algorithm
+#  lambda <- rep(as.numeric(lambda), length.out=2)
+#  lambda[is.na(lambda)] <- formals()$lambda
+#  nIterations <- as.integer(nIterations)
+#  nAlternate <- as.integer(nAlternate)
+#  nGrid <- as.integer(nGrid)
+#  tol <- as.numeric(tol)
+#  ppControl <- list(lambda=lambda, nIterations=nIterations, 
+#      nAlternate=nAlternate, nGrid=nGrid, select=select, tol=tol)
+#  ## call workhorse function
+#  cca <- ccaPP(x, y, k, method=method, corControl=control, algorithm="sparse", 
+#      ppControl=ppControl, fallback=fallback, seed=seed)
+#  cca$call <- matchedCall
+#  cca
+#}
+
 
 #' @rdname ccaGrid
 #' @export
@@ -187,22 +186,23 @@ CCAgrid <- function(x, y, k = 1,
     cca
 }
 
-#' @rdname ccaGrid
-#' @export
 
-sCCAgrid <- function(x, y, k = 1, lambda = 0, 
-    method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-    maxiter = 10, maxalter = 10, splitcircle = 25, select=NULL, 
-    zero.tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
-  ## initializations
-  matchedCall <- match.call()
-  ## call ccaGrid()
-  cca <- sccaGrid(x, y, k=k, lambda=lambda, method=method, nIterations=maxiter, 
-      nAlternate=maxalter, nGrid=splitcircle, select=select, tol=zero.tol, 
-      fallback=fallback, seed=seed, ...)
-  cca$call <- matchedCall
-  cca
-}
+# @rdname ccaGrid
+# @export
+
+#sCCAgrid <- function(x, y, k = 1, lambda = 0, 
+#    method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+#    maxiter = 10, maxalter = 10, splitcircle = 25, select=NULL, 
+#    zero.tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
+#  ## initializations
+#  matchedCall <- match.call()
+#  ## call ccaGrid()
+#  cca <- sccaGrid(x, y, k=k, lambda=lambda, method=method, nIterations=maxiter, 
+#      nAlternate=maxalter, nGrid=splitcircle, select=select, tol=zero.tol, 
+#      fallback=fallback, seed=seed, ...)
+#  cca$call <- matchedCall
+#  cca
+#}
 
 
 #' (Robust) CCA via projections through the data points
@@ -302,7 +302,7 @@ ccaProj <- function(x, y, k = 1,
     cca
 }
 
-## wrapper function for more compatibility with package pcaPP
+
 #' @rdname ccaProj
 #' @export
 

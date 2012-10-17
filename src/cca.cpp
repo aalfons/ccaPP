@@ -1206,9 +1206,8 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 			error("method not available");
 		}
 	} else if(algorithm == "sparse") {
-		// TODO: algorithm currently only works for k = 1
-		// larger values of k require backtransformation of weighting vectors
-		// before computing the penalty
+		// algorithm currently only works for k = 1; larger values of k require
+		// backtransformation of weighting vectors before computing the penalty
 		k = 1;
 		// define control object for alternate grid searches
 		SparseGridControl ppControl(Rcpp_ppControl);

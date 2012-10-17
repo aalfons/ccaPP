@@ -134,6 +134,42 @@ maxCorGrid <- function(x, y,
 }
 
 
+#' @rdname maxCorGrid
+#' @export
+
+sMaxCorGrid <- function(x, y, lambda = 0, 
+        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+        control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
+        select = NULL, tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
+    ## initializations
+    matchedCall <- match.call()
+    ## define list of control arguments for algorithm
+    lambda <- rep(as.numeric(lambda), length.out=2)
+    lambda[is.na(lambda)] <- formals()$lambda
+    nIterations <- as.integer(nIterations)
+    nAlternate <- as.integer(nAlternate)
+    nGrid <- as.integer(nGrid)
+    tol <- as.numeric(tol)
+    ppControl <- list(lambda=lambda, nIterations=nIterations, 
+        nAlternate=nAlternate, nGrid=nGrid, select=select, tol=tol)
+    ## call workhorse function
+    maxCor <- maxCorPP(x, y, method=method, corControl=control, 
+        algorithm="sparse", ppControl=ppControl, fallback=fallback, 
+        seed=seed)
+    ## recompute penalty
+    a <- maxCor$a
+    b <- maxCor$b
+    if(length(a) < 2) lambda[1] <- 0
+    if(length(b) < 2) lambda[2] <- 0
+    penalty <- lambda[1] * sum(abs(a)) + lambda[2] * sum(abs(b))
+    ## add information on penalty and objective function
+    maxCor$lambda <- lambda
+    maxCor$objective <- maxCor$cor - penalty
+    maxCor$call <- matchedCall
+    maxCor
+}
+
+
 #' (Robust) maximum correlation via projections through the data points
 #' 
 #' Compute the maximum correlation between two data sets via projection pursuit 
