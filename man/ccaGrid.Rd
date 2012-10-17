@@ -2,6 +2,8 @@
 \alias{ccaGrid}
 \alias{CCAgrid}
 \alias{print.cca}
+\alias{sccaGrid}
+\alias{sCCAgrid}
 \title{(Robust) CCA via alternating series of grid searches}
 \usage{
   ccaGrid(x, y, k = 1,
@@ -10,7 +12,19 @@
     nGrid = 25, select = NULL, tol = 1e-06,
     fallback = FALSE, seed = NULL, ...)
 
+  sccaGrid(x, y, k = 1, lambda = 0,
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
+    control = list(...), nIterations = 10, nAlternate = 10,
+    nGrid = 25, select = NULL, tol = 1e-06,
+    fallback = FALSE, seed = NULL, ...)
+
   CCAgrid(x, y, k = 1,
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
+    maxiter = 10, maxalter = 10, splitcircle = 25,
+    select = NULL, zero.tol = 1e-06, fallback = FALSE,
+    seed = NULL, ...)
+
+  sCCAgrid(x, y, k = 1, lambda = 0,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     maxiter = 10, maxalter = 10, splitcircle = 25,
     select = NULL, zero.tol = 1e-06, fallback = FALSE,
