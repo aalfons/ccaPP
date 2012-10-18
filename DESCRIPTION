@@ -1,8 +1,8 @@
 Package: ccaPP
 Type: Package
 Title: (Robust) canonical correlation analysis via projection pursuit
-Version: 0.2.1
-Date: 2012-10-15
+Version: 0.3.0
+Date: 2012-10-18
 Depends:
     Rcpp (>= 0.9.10),
     parallel,

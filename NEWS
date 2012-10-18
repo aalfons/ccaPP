@@ -1,7 +1,11 @@
-Changes in ccaPP version 0.2.1
+Changes in ccaPP version 0.3.0
 
     + New function sMaxCorGrid() for sparse maximum correlation estimators.
-    
+
+
+
+Changes in ccaPP version 0.2.1
+
     + Bugfix in corM(): robust starting values now work with dummy variables.
 
 

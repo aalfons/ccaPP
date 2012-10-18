@@ -248,6 +248,8 @@ public:
 			vec&, vec&, bool&);
 	// get equispaced grid of angles in a plane
 	vec getGrid(const uword&);
+	// compute updated weighting vector in grid search
+	vec getVector(const vec&, const double&, const uword&);
 	// grid search to update one weighting vector
 	template <class CorControl>
 	void gridSearch(const mat&, const uvec&, const vec&, CorControl, vec&,
@@ -418,6 +420,14 @@ vec GridControl::getGrid(const uword& i) {
 	return grid;
 }
 
+// compute updated weighting vector in grid search
+vec GridControl::getVector(const vec& a, const double& angle, const uword& j) {
+	// fast computation of cos(angle) * a + sin(angle) * ej
+	vec b = cos(angle) * a;
+	b(j) += sin(angle);
+	return b;
+}
+
 // grid search to update one weighting vector
 // x ............ data matrix for which to update the weighting vector
 // orderX ......... order in which to browse through the variables
@@ -434,14 +444,13 @@ void GridControl::gridSearch(const mat& x, const uvec& orderX, const vec& y,
 	const uword p = x.n_cols, nGrid = grid.n_elem;
 	// perform grid searches for each canonical basis vector
 	for(uword j = 0; j < p; j++) {
-		// define current canonical basis vector according to order of columns
-		vec ej = zeros<vec>(p);
-		ej(orderX(j)) = 1;
+		// current coordinate to be updated (in the order of columns)
+		uword orderJ = orderX(j);
 		// perform grid search for the current canonical basis vector
 		vec corY(nGrid);
 		for(uword k = 0; k < nGrid; k++) {
 			double angle = grid(k);
-			vec currentA = cos(angle) * a + sin(angle) * ej;
+			vec currentA = getVector(a, grid(k), orderJ);
 			corY(k) = abs(corControl.cor(x * currentA, y));
 		}
 		// find grid point that maximizes the correlation functional and keep
@@ -453,8 +462,7 @@ void GridControl::gridSearch(const mat& x, const uvec& orderX, const vec& y,
 		// of the current grid search may be smaller than the previous maximum
 		if(currentMaxCor > maxCor) {
 			maxCor = currentMaxCor;
-			double optAngle = grid(whichMax);
-			a = cos(optAngle) * a + sin(optAngle) * ej;
+			a = getVector(a, grid(whichMax), orderJ);
 		}
 	}
 }
@@ -614,6 +622,8 @@ public:
 	// constructors
 	SparseGridControl();
 	SparseGridControl(List&);
+	// compute updated weighting vector in grid search
+	vec getVector(const vec&, const double&, const uword&);
 	// grid search to update one weighting vector
 	template <class CorControl>
 	void gridSearch(const mat&, const uvec&, const double&, const vec&,
@@ -640,6 +650,17 @@ inline SparseGridControl::SparseGridControl(List& control)
 	lambdaY = lambda[1];
 }
 
+// compute updated weighting vector in grid search
+vec SparseGridControl::getVector(const vec& a,
+		const double& angle, const uword& j) {
+	// fast computation of b / ||b|| with b = cos(angle) * a + sin(angle) * ej
+	double tanAngle = tan(angle);
+	double denominator = sqrt(1 + 2*tanAngle*a(j) + tanAngle*tanAngle);
+	vec b = a / denominator;
+	b(j) += tanAngle / denominator;
+	return b;
+}
+
 // sparse grid search to update one weighting vector
 // x .............. data matrix for which to update the weighting vector
 // orderX ......... order in which to browse through the variables
@@ -658,15 +679,12 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 	const uword p = x.n_cols, nGrid = grid.n_elem;
 	// perform grid searches for each canonical basis vector
 	for(uword j = 0; j < p; j++) {
-		// define current canonical basis vector according to order of columns
-		vec ej = zeros<vec>(p);
-		ej(orderX(j)) = 1;
+		// current coordinate to be updated (in the order of columns)
+		uword orderJ = orderX(j);
 		// perform grid search for the current canonical basis vector
 		vec objective(nGrid);
 		for(uword k = 0; k < nGrid; k++) {
-			double angle = grid(k);
-			vec currentA = cos(angle) * a + sin(angle) * ej;
-			currentA = currentA / norm(currentA, 2);
+			vec currentA = getVector(a, grid(k), orderJ);
 			double currentCorY = abs(corControl.cor(x * currentA, y));
 			objective(k) = currentCorY - lambda * norm(currentA, 1);
 		}
@@ -680,8 +698,7 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 		// previous maximum
 		if(currentMaxObjective > maxObjective) {
 			maxObjective = currentMaxObjective;
-			double optAngle = grid(whichMax);
-			a = cos(optAngle) * a + sin(optAngle) * ej;
+			a = getVector(a, grid(whichMax), orderJ);
 		}
 	}
 }
@@ -708,15 +725,13 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 	const uword p = x.n_cols, nGrid = grid.n_elem;
 	// perform grid searches for each canonical basis vector
 	for(uword j = 0; j < p; j++) {
-		// define current canonical basis vector according to order of columns
-		vec ej = zeros<vec>(p);
-		ej(orderX(j)) = 1;
+		// current coordinate to be updated (in the order of columns)
+		uword orderJ = orderX(j);
 		// perform grid search for the current canonical basis vector
 		vec corY(nGrid), objective(nGrid), penalties(nGrid);
 		for(uword k = 0; k < nGrid; k++) {
 			double angle = grid(k);
-			vec currentA = cos(angle) * a + sin(angle) * ej;
-			currentA = currentA / norm(currentA, 2);
+			vec currentA = getVector(a, grid(k), orderJ);
 			corY(k) = abs(corControl.cor(x * currentA, y));
 			penalties(k) = lambda * norm(currentA, 1);
 			objective(k) = corY(k) - penalties(k) - penaltyY;
@@ -731,8 +746,7 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 		// previous maximum
 		if(currentMaxObjective > maxObjective) {
 			maxCor = corY(whichMax);
-			double optAngle = grid(whichMax);
-			a = cos(optAngle) * a + sin(optAngle) * ej;
+			a = getVector(a, grid(whichMax), orderJ);
 			penaltyX = penalties(whichMax);
 			maxObjective = currentMaxObjective;
 		}
