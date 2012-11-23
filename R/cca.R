@@ -322,8 +322,7 @@ CCAproj <- function(x, y, k = 1,
 ## workhorse function
 ccaPP <- function(x, y, k = 1, 
         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-        corControl, forceConsistency = TRUE, 
-        algorithm = c("grid", "sparse", "proj"), 
+        corControl, forceConsistency = TRUE, algorithm = c("grid", "proj"), 
         ppControl, fallback = FALSE, seed = NULL) {
     ## initializations
     x <- as.matrix(x)
@@ -348,7 +347,7 @@ ccaPP <- function(x, y, k = 1,
         method <- match.arg(method)
         corControl <- getCorControl(method, corControl, forceConsistency)
         # additional checks for grid search algorithm
-        if(algorithm != "proj") {
+        if(algorithm == "grid") {
             # check subset of variables to be used for determining the order of 
             # the variables from the respective other data set
             select <- ppControl$select
@@ -389,7 +388,6 @@ ccaPP <- function(x, y, k = 1,
             R_corControl=corControl, R_algorithm=algorithm, 
             R_ppControl=ppControl, R_fallback=isTRUE(fallback), 
             PACKAGE="ccaPP")
-        cca$cor <- drop(cca$cor)
     }
     ## assign class and return results
     class(cca) <- "cca"

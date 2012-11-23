@@ -173,7 +173,7 @@ double CorMControl::cor(const vec& x, const vec& y) {
 // for testing purposes
 
 template <class CorControl>
-double fastCor(const vec& x, const vec& y, CorControl control) {
+double fastCor(const vec& x, const vec& y, CorControl& control) {
 	return control.cor(x, y);
 }
 
@@ -241,10 +241,10 @@ public:
 	GridControl(List&);
 	// get the order in which to update the elements of a weighting vector
 	template <class CorControl>
-	void findOrder(const mat&, const vec&, CorControl, uvec&, double&, vec&);
+	void findOrder(const mat&, const vec&, CorControl&, uvec&, double&, vec&);
 	// get the order in which to update the elements of the weighting vectors
 	template <class CorControl>
-	void findOrder(const mat&, const mat&, CorControl, uvec&, uvec&, double&,
+	void findOrder(const mat&, const mat&, CorControl&, uvec&, uvec&, double&,
 			vec&, vec&, bool&);
 	// get equispaced grid of angles in a plane
 	vec getGrid(const uword&);
@@ -252,13 +252,13 @@ public:
 	vec getVector(const vec&, const double&, const uword&);
 	// grid search to update one weighting vector
 	template <class CorControl>
-	void gridSearch(const mat&, const uvec&, const vec&, CorControl, vec&,
+	void gridSearch(const mat&, const uvec&, const vec&, CorControl&, vec&,
 			double&, vec&);
 	// set counter of consecutive iterations without improvement
 	void setCounter(uword&, const double&, const double&);
 	// maximum correlation between multivariate data sets x and y
 	template <class CorControl>
-	double maxCor(const mat&, const mat&, CorControl, vec&, vec&);
+	double maxCor(const mat&, const mat&, CorControl&, vec&, vec&);
 };
 
 // constructors
@@ -297,7 +297,7 @@ inline GridControl::GridControl(List& control) {
 // maxCor ....... maximum correlation to get initial value
 // a ............ weighting vector to get initial value
 template <class CorControl>
-void GridControl::findOrder(const mat& x, const vec& y, CorControl corControl,
+void GridControl::findOrder(const mat& x, const vec& y, CorControl& corControl,
 		uvec& orderX, double& maxCor, vec& a) {
 	// compute columnwise absolute correlations of x with y
 	const uword p = x.n_cols;
@@ -327,7 +327,7 @@ void GridControl::findOrder(const mat& x, const vec& y, CorControl corControl,
 // startWithX ... logical to be computed that indicates whether to start with
 //                the first data set in the alternate grid searches
 template <class CorControl>
-void GridControl::findOrder(const mat& x, const mat& y, CorControl corControl,
+void GridControl::findOrder(const mat& x, const mat& y, CorControl& corControl,
 		uvec& orderX, uvec& orderY, double& maxCor, vec& a, vec& b,
 		bool& startWithX) {
 	const uword p = x.n_cols, q = y.n_cols;
@@ -439,7 +439,7 @@ vec GridControl::getVector(const vec& a, const double& angle, const uword& j) {
 // a ............ weighting vector to be updated
 template <class CorControl>
 void GridControl::gridSearch(const mat& x, const uvec& orderX, const vec& y,
-		CorControl corControl, vec& grid, double& maxCor, vec& a) {
+		CorControl& corControl, vec& grid, double& maxCor, vec& a) {
 	// initializations
 	const uword p = x.n_cols, nGrid = grid.n_elem;
 	// perform grid searches for each canonical basis vector
@@ -488,7 +488,7 @@ void GridControl::setCounter(uword& counter, const double& current,
 // a ............. first weighting vector to be updated
 // b ............. second weighting vector to be updated
 template <class CorControl>
-double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
+double GridControl::maxCor(const mat& x, const mat& y, CorControl& corControl,
 		vec& a, vec& b) {
 	// initializations
 	uword p = x.n_cols, q = y.n_cols;
@@ -618,36 +618,45 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl corControl,
 
 class SparseGridControl: public GridControl {
 public:
-	double lambdaX, lambdaY;	// penalty parameters
+	vec lambdaX, lambdaY;	// penalty parameters
 	// constructors
 	SparseGridControl();
 	SparseGridControl(List&);
 	// compute updated weighting vector in grid search
 	vec getVector(const vec&, const double&, const uword&);
-	// grid search to update one weighting vector
+	// grid search to update weighting vector for multivariate x and univariate y
 	template <class CorControl>
 	void gridSearch(const mat&, const uvec&, const double&, const vec&,
-			CorControl, vec&, double&, vec&);
+			CorControl&, vec&, vec&, double&);
 	// grid search to update one weighting vector for multivariate x and y
 	template <class CorControl>
 	void gridSearch(const mat&, const uvec&, const double&, const vec&,
-			const double&, CorControl, vec&, double&, vec&, double&, double&);
-	// maximum correlation between multivariate data sets x and y
+			const double&, CorControl&, vec&, double&, vec&, double&, double&);
+  // workhorse function for maximum correlation between multivariate x and 
+  // univariate y
+  template <class CorControl>
+	void maxCorFit(const mat&, const uvec&, const double&, const vec&, 
+      CorControl&, double&, vec&, double&);
+  // workhorse function for maximum correlation between multivariate x and y
+  template <class CorControl>
+	void maxCorFit(const mat&, const uvec&, const double&, const mat&, 
+      const uvec&, const double&, CorControl&, double&, vec&, vec&, 
+      double&, double&, double&);
+  // maximum correlation between multivariate data sets x and y
 	template <class CorControl>
-	double maxCor(const mat&, const mat&, CorControl, vec&, vec&);
+	vec maxCor(const mat&, const mat&, CorControl&, mat&, mat&, vec&);
 };
 
 // constructors
 inline SparseGridControl::SparseGridControl() {
-	lambdaX = 0;
-	lambdaY = 0;
+	lambdaX = zeros<vec>(1);
+	lambdaY = zeros<vec>(1);
 }
 inline SparseGridControl::SparseGridControl(List& control)
 : GridControl(control) {
-	SEXP R_lambda = control["lambda"];
-	NumericVector lambda(R_lambda);
-	lambdaX = lambda[0];
-	lambdaY = lambda[1];
+	SEXP R_lambdaX = control["lambdaX"], R_lambdaY = control["lambdaY"];
+  lambdaX = as<vec>(R_lambdaX);
+  lambdaY = as<vec>(R_lambdaY);
 }
 
 // compute updated weighting vector in grid search
@@ -661,20 +670,20 @@ vec SparseGridControl::getVector(const vec& a,
 	return b;
 }
 
-// sparse grid search to update one weighting vector
+// sparse grid search to update weighting vector for multivariate x and 
+// univariate y
 // x .............. data matrix for which to update the weighting vector
 // orderX ......... order in which to browse through the variables
 // lambda ......... penalty parameter for the weighting vector to be updated
-// y .............. linear combination of the other data matrix according to
-//                  the other weighting vector, which is kept fixed
+// y .............. other data vector
 // corControl ..... control object to compute correlation
 // grid ........... grid points to be used for grid search
-// maxObjective ... maximum correlation to be updated
 // a .............. weighting vector to be updated
+// maxObjective ... maximum value of the objective function to be updated
 template <class CorControl>
 void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
-		const double& lambda, const vec& y, CorControl corControl,
-		vec& grid, double& maxObjective, vec& a) {
+		const double& lambda, const vec& y, CorControl& corControl,
+		vec& grid, vec& a, double& maxObjective) {
 	// initializations
 	const uword p = x.n_cols, nGrid = grid.n_elem;
 	// perform grid searches for each canonical basis vector
@@ -713,13 +722,13 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 // corControl ..... control object to compute correlation
 // grid ........... grid points to be used for grid search
 // maxCor ......... maximum correlation to be updated
-// maxObjective ... maximum value of the objective function to be updated
 // a .............. weighting vector to be updated
 // penaltyX ....... penalty for the weighting vector to be updated
+// maxObjective ... maximum value of the objective function to be updated
 template <class CorControl>
 void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 		const double& lambda, const vec& y, const double& penaltyY,
-		CorControl corControl, vec& grid, double& maxCor, vec& a,
+		CorControl& corControl, vec& grid, double& maxCor, vec& a,
 		double& penaltyX, double& maxObjective) {
 	// initializations
 	const uword p = x.n_cols, nGrid = grid.n_elem;
@@ -753,6 +762,69 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 	}
 }
 
+// workhorse function for maximum correlation between multivariate x and 
+// univariate y
+template <class CorControl>
+void SparseGridControl::maxCorFit(const mat& x, const uvec& orderX, 
+    const double& lambda, const vec& y, CorControl& corControl, 
+    double& maxCor, vec& a, double& maxObjective) {
+  // initializations
+  double previousMaxObjective = R_NegInf;
+	// stop if there are two consecutive iterations without improvement
+	uword i = 0, convCounter = 0;
+	while((i < nIterations) && (convCounter < 2)) {
+		previousMaxObjective = maxObjective;
+		vec grid = getGrid(i+1);		// define vector of grid points
+		gridSearch(x, orderX, lambda, y, corControl, grid, a, maxObjective);
+		i++;
+		setCounter(convCounter, maxObjective, previousMaxObjective);
+	}
+  // check direction
+	maxCor = corControl.cor(x * a, y);
+	if(maxCor < 0) {
+		maxCor = -maxCor;
+		a = -a;
+	}
+}
+
+// workhorse function for maximum correlation between multivariate x and y
+template <class CorControl>
+void SparseGridControl::maxCorFit(const mat& x, const uvec& orderX, 
+    const double& lambda1, const mat& y, const uvec& orderY, 
+    const double& lambda2, CorControl& corControl, double& maxCor, vec& a, 
+    vec& b, double& penaltyX, double& penaltyY, double& maxObjective) {
+  // initializations
+  double previousMaxObjective = R_NegInf;
+	// stop if there are two consecutive iterations without improvement
+	uword i = 0, convCounter = 0;
+	while((i < nIterations) && (convCounter < 2)) {
+		previousMaxObjective = maxObjective;
+		vec grid = getGrid(i+1);	// define vector of grid points
+		uword j = 0;
+		double altMaxObjective = R_NegInf;
+		while((j < nAlternate) && ((maxObjective - altMaxObjective) > tol)) {
+			altMaxObjective = maxObjective;
+			// maximize correlation functional over a keeping b fixed
+			vec yb = y * b;		// linear combination of columns of y
+			gridSearch(x, orderX, lambda1, yb, penaltyY, corControl,
+					grid, maxCor, a, penaltyX, maxObjective);
+			// maximize correlation functional over b keeping a fixed
+			vec xa = x * a;		// linear combination of columns of x
+			gridSearch(y, orderY, lambda2, xa, penaltyX, corControl,
+					grid, maxCor, b, penaltyY, maxObjective);
+			j++;
+		}
+		i++;
+		setCounter(convCounter, maxObjective, previousMaxObjective);
+	}
+  // check direction
+  maxCor = corControl.cor(x * a, y * b);
+	if(maxCor < 0) {
+		maxCor = -maxCor;
+		b = -b;
+	}
+}
+
 // maximum correlation between multivariate data sets x and y based on
 // sparse alternate grid searches
 // x ............. first data matrix
@@ -761,135 +833,116 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 // a ............. first weighting vector to be updated
 // b ............. second weighting vector to be updated
 template <class CorControl>
-double SparseGridControl::maxCor(const mat& x, const mat& y,
-		CorControl corControl, vec& a, vec& b) {
+vec SparseGridControl::maxCor(const mat& x, const mat& y,
+		CorControl& corControl, mat& A, mat& B, vec& objective) {
 	// initializations
 	uword p = x.n_cols, q = y.n_cols;
+  vec r;  // initialize vector of maximum correlations
 	// perform alternate grid searches if both data sets are multivariate
 	// if one data set is univariate, alternate grid searches are not necessary
-	double maxCor;	// initialize maximum correlation
 	if((p == 1) && (q == 1)) {
 		// both data sets are univariate
-		a.ones(p); b.ones(q);
+		r.set_size(1); objective.set_size(1);
+    A.ones(p, 1); B.ones(q, 1); 
+    lambdaX.zeros(p); lambdaY.zeros(q);
 		vec xx = x.unsafe_col(0), yy = y.unsafe_col(0);	// reuse memory
-		maxCor = corControl.cor(xx, yy);				// compute correlation
+		// compute correlation
+    r(0) = corControl.cor(xx, yy);
 		// check sign of correlation
-		if(maxCor < 0) {
-			maxCor = -maxCor;
-			b = -b;
+		if(r(0) < 0) {
+			r(0) = -r(0);
+			B(0, 0) = -B(0, 0);
 		}
+    objective(0) = r(0);
 	} else {
-		double maxObjective, previousMaxObjective = R_NegInf;
+    double maxCor, maxObjective;
 		if((p > 1) && (q == 1)) {
 			// x is multivariate, y is univariate
-			vec yy = y.unsafe_col(0);							// reuse memory
-			uvec orderX(p);
-			a.zeros(p); b.ones(q);
+			uword nLambdaX = lambdaX.n_elem;
+      r.set_size(nLambdaX); objective.set_size(nLambdaX);
+      A.set_size(p, nLambdaX); B.ones(q, nLambdaX); 
+      lambdaY.zeros(q);
+    	vec yy = y.unsafe_col(0);   // reuse memory
+      // find order of x variables
+  		uvec orderX(p); 
+      vec a = zeros<vec>(p);
 			findOrder(x, yy, corControl, orderX, maxCor, a);	// column order
-			maxObjective = maxCor - lambdaX;	// L1 norm of a is 1
-			// stop if there are two consecutive iterations without improvement
-			uword i = 0, convCounter = 0;
-			while((i < nIterations) && (convCounter < 2)) {
-				previousMaxObjective = maxObjective;
-				vec grid = getGrid(i+1);		// define vector of grid points
-				gridSearch(x, orderX, lambdaX, yy, corControl,
-						grid, maxObjective, a);	// grid search
-				i++;
-				setCounter(convCounter, maxObjective, previousMaxObjective);
-			}
+			// compute maximum correlation for each penalty parameter
+      for(int k = nLambdaX-1; k >= 0; k--) {
+        maxObjective = maxCor - lambdaX(k) * norm(a, 1);
+        maxCorFit(x, orderX, lambdaX(k), yy, corControl, 
+            maxCor, a, maxObjective);
+        r(k) = maxCor;
+        A.col(k) = a;
+        objective(k) = maxObjective;
+  		}
 		} else if((p == 1) && (q > 1)) {
 			// x is univariate, y is multivariate
-			vec xx = x.unsafe_col(0);							// reuse memory
-			uvec orderY(q);
-			a.ones(p); b.zeros(q);
-			findOrder(y, xx, corControl, orderY, maxCor, b);	// column order
-			maxObjective = maxCor - lambdaY;	// L1 norm of b is 1
-			// stop if there are two consecutive iterations without improvement
-			uword i = 0, convCounter = 0;
-			while((i < nIterations) && (convCounter < 2)) {
-				previousMaxObjective = maxObjective;
-				vec grid = getGrid(i+1);		// define vector of grid points
-				gridSearch(y, orderY, lambdaY, xx, corControl,
-						grid, maxObjective, b);	// grid search
-				i++;
-				setCounter(convCounter, maxObjective, previousMaxObjective);
-			}
+  		uword nLambdaY = lambdaY.n_elem;
+      r.set_size(nLambdaY); objective.set_size(nLambdaY);
+      A.ones(p, nLambdaY); B.set_size(q, nLambdaY); 
+      lambdaX.zeros(p);
+    	vec xx = x.unsafe_col(0);   // reuse memory
+      // find order of y variables
+  		uvec orderY(q); 
+      vec b = zeros<vec>(q);
+			findOrder(y, xx, corControl, orderY, maxCor, b);  // column order
+			// compute maximum correlation for each penalty parameter
+      for(int k = nLambdaY-1; k >= 0; k--) {
+        maxObjective = maxCor - lambdaY(k) * norm(b, 1);
+        maxCorFit(y, orderY, lambdaY(k), xx, corControl, 
+            maxCor, b, maxObjective);
+        r(k) = maxCor;
+        B.col(k) = b;
+        objective(k) = maxObjective;
+  		}
 		} else if((p > 1) && (q > 1)) {
 			// both data sets are multivariate
-			// compute correlations between variables in x and y
-			uvec orderX(p), orderY(q);
-			a.zeros(p); b.zeros(q);
-			bool startWithX;
-			findOrder(x, y, corControl, orderX, orderY,
-					maxCor, a, b, startWithX);	// column orders
-			double penaltyX = lambdaX, penaltyY = lambdaY;  // L1 norms are 1
-			maxObjective = maxCor - penaltyX - penaltyY;
-			// perform alternate grid searches
-			if(startWithX) {
-				// start with grid search for x
-				// stop if there are two consecutive iterations without improvement
-				uword i = 0, convCounter = 0;
-				while((i < nIterations) && (convCounter < 2)) {
-					previousMaxObjective = maxObjective;
-					vec grid = getGrid(i+1);	// define vector of grid points
-					uword j = 0;
-					double altMaxObjective = R_NegInf;
-					while((j < nAlternate) && ((maxObjective - altMaxObjective) > tol)) {
-						altMaxObjective = maxObjective;
-						// maximize correlation functional over a keeping b fixed
-						vec yb = y * b;		// linear combination of columns of y
-						gridSearch(x, orderX, lambdaX, yb, penaltyY, corControl,
-								grid, maxCor, a, penaltyX, maxObjective);
-						// maximize correlation functional over b keeping a fixed
-						vec xa = x * a;		// linear combination of columns of x
-						gridSearch(y, orderY, lambdaY, xa, penaltyX, corControl,
-								grid, maxCor, b, penaltyY, maxObjective);
-						j++;
-					}
-					i++;
-					setCounter(convCounter, maxObjective, previousMaxObjective);
-				}
-			} else {
-				// start with grid search for y
-				// stop if there are two consecutive iterations without improvement
-				uword i = 0, convCounter = 0;
-				while((i < nIterations) && (convCounter < 2)) {
-					previousMaxObjective = maxObjective;
-					vec grid = getGrid(i+1);	// define vector of grid points
-					uword j = 0;
-					double altMaxObjective = R_NegInf;
-					while((j < nAlternate) && ((maxObjective - altMaxObjective) > tol)) {
-						altMaxObjective = maxObjective;
-						// maximize correlation functional over b keeping a fixed
-						vec xa = x * a;		// linear combination of columns of x
-						gridSearch(y, orderY, lambdaY, xa, penaltyX, corControl,
-								grid, maxCor, b, penaltyY, maxObjective);
-						// maximize correlation functional over a keeping b fixed
-						vec yb = y * b;		// linear combination of columns of y
-						gridSearch(x, orderX, lambdaX, yb, penaltyY, corControl,
-								grid, maxCor, a, penaltyX, maxObjective);
-						j++;
-					}
-					i++;
-					setCounter(convCounter, maxObjective, previousMaxObjective);
-				}
-			}
-		} else {
-			return NA_REAL;	// should never happen
-		}
-		// check direction
-		maxCor = corControl.cor(x * a, y * b);
-		if(maxCor < 0) {
-			maxCor = -maxCor;
-			if((p > 1) && (q == 1)) {
-				a = -a;
-			} else {
-				b = -b;
-			}
+//    	uword nLambdaX = lambdaX.n_elem, nLambdaY = lambdaY.n_elem;
+//      uword nLambda = nLambdaX * nLambdaY;
+//      r.set_size(nLambda); objective.set_size(nLambda);
+//      A.ones(p, nLambda); B.set_size(q, nLambda); 
+//      // find order of x and y variables
+//			uvec orderX(p), orderY(q);
+//			vec a = zeros<vec>(p), b = zeros<vec>(q);
+//			bool startWithX;
+//			findOrder(x, y, corControl, orderX, orderY, maxCor, a, b, startWithX);
+//      // compute initial value of objective function (L1 norms are 1)
+//  		// compute maximum correlation for each combination of penalty parameters
+//      for(int k = nLambdaX-1; k >= 0; k--) {
+//        for(int l = nLambdaY-1; l >= 0; l--) {
+//      		double penaltyX = lambdaX(k) * norm(a, 1);
+//          double penaltyY = lambdaY(l) * norm(b, 1);
+//		    	maxObjective = maxCor - penaltyX - penaltyY;
+//    			Rprintf("lambdaX = %f, lambdaY=%f\n", lambdaX(k), lambdaY(l));
+//          Rprintf("  before: maxCor = %f, maxObjective = %f\n", maxCor, maxObjective);
+//          // perform alternate grid searches
+//	    		if(startWithX) {
+//		    		// start with grid search for x
+//            maxCorFit(x, orderX, lambdaX(k), y, orderY, lambdaY(l), corControl, 
+//                maxCor, a, b, penaltyX, penaltyY, maxObjective);
+//    			} else {
+//	    			// start with grid search for y
+//            maxCorFit(y, orderY, lambdaY(l), x, orderX, lambdaX(k), corControl, 
+//                maxCor, b, a, penaltyY, penaltyX, maxObjective);
+//  			  }
+//          Rprintf("  after: maxCor = %f, maxObjective = %f\n", maxCor, maxObjective);
+//          uword kl = k * nLambdaX + l;
+//          r(kl) = maxCor;
+//          A.col(kl) = a;
+//          B.col(kl) = b;
+//          objective(kl) = maxObjective;
+//        }
+//        // reset values
+//        uword kl = k * nLambdaX + nLambdaY - 1;
+//        maxCor = r(kl);
+//        a = A.col(kl);
+//        b = B.col(kl);
+//			}
 		}
 	}
 	// return maximum correlation
-	return maxCor;
+	return r;
 }
 
 
@@ -907,7 +960,7 @@ public:
 	mat getDirections(const mat&);
 	// maximum correlation between multivariate data sets x and y
 	template <class CorControl>
-	double maxCor(const mat&, const mat&, CorControl, vec&, vec&);
+	double maxCor(const mat&, const mat&, CorControl&, vec&, vec&);
 };
 
 // constructors
@@ -949,7 +1002,7 @@ mat ProjControl::getDirections(const mat& x) {
 // a ............ first weighting vector to be updated
 // b ............ second weighting vector to be updated
 template <class CorControl>
-double ProjControl::maxCor(const mat& x, const mat& y, CorControl corControl,
+double ProjControl::maxCor(const mat& x, const mat& y, CorControl& corControl,
 		vec& a, vec& b) {
 	// initializations
 	uword n = x.n_rows, p = x.n_cols, q = y.n_cols;
@@ -1114,6 +1167,7 @@ mat householder(const vec& a) {
 	return P;
 }
 
+
 // canonical correlation analysis via projection pursuit
 // x ............ first data matrix
 // y ............ second data matrix
@@ -1125,8 +1179,8 @@ mat householder(const vec& a) {
 // A ............ matrix of canonical vectors for first matrix to be updated
 // B ............ matrix of canonical vectors for second matrix to be updated
 template <class CorControl, class PPControl>
-vec ccaPP(const mat& x, const mat& y, const uword& k, CorControl corControl,
-		PPControl ppControl, const bool& robust, const bool& fallback,
+vec ccaPP(const mat& x, const mat& y, const uword& k, CorControl& corControl,
+		PPControl& ppControl, const bool& robust, const bool& fallback,
 		mat& A, mat& B) {
 	// initializations
 	uword p = x.n_cols, q = y.n_cols;
@@ -1192,7 +1246,7 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 	string method = as<string>(R_method);		// convert character string
 	List Rcpp_corControl(R_corControl);			// list of control parameters
 	string algorithm = as<string>(R_algorithm);	// convert character string
-	List Rcpp_ppControl(R_ppControl);			// list of control parameters
+	List Rcpp_ppControl(R_ppControl);		  	// list of control parameters
 	bool fallback = as<bool>(R_fallback);		// convert to boolean
 	// initialize results
 	vec r;
@@ -1200,31 +1254,6 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 	if(algorithm == "grid") {
 		// define control object for alternate grid searches
 		GridControl ppControl(Rcpp_ppControl);
-		// define control object for the correlations and call the arma version
-		if(method == "spearman") {
-			CorSpearmanControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
-		} else if(method == "kendall") {
-			CorKendallControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
-		} else if(method == "quadrant") {
-			CorQuadrantControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
-		} else if(method == "M") {
-			CorMControl corControl(Rcpp_corControl);
-			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
-		} else if(method == "pearson") {
-			CorPearsonControl corControl;
-			r = ccaPP(x, y, k, corControl, ppControl, false, false, A, B);
-		} else {
-			error("method not available");
-		}
-	} else if(algorithm == "sparse") {
-		// algorithm currently only works for k = 1; larger values of k require
-		// backtransformation of weighting vectors before computing the penalty
-		k = 1;
-		// define control object for alternate grid searches
-		SparseGridControl ppControl(Rcpp_ppControl);
 		// define control object for the correlations and call the arma version
 		if(method == "spearman") {
 			CorSpearmanControl corControl(Rcpp_corControl);
@@ -1271,8 +1300,98 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 	}
 	// wrap and return result
 	return List::create(
-			Named("cor") = r,
+			Named("cor") = wrap(r.begin(), r.end()),
 			Named("A") = A,
 			Named("B") = B
+			);
+}
+
+
+// sparse maximum correlation via projection pursuit
+// x ............ first data matrix
+// y ............ second data matrix
+// corControl ... control object to compute correlation
+// ppControl .... control object for sparse algorithm
+// robust ....... should the data be robustly standardized?
+// fallback ..... should the fallback mode for robust standardization be used?
+// A ............ matrix of weighting vectors for first matrix to be updated
+// B ............ matrix of weighting vectors for second matrix to be updated
+template <class CorControl, class PPControl>
+vec sMaxCorPP(const mat& x, const mat& y, CorControl& corControl,
+  	PPControl& ppControl, const bool& robust, const bool& fallback,
+		mat& A, mat& B, vec& objective) {
+	// initializations
+	const uword p = x.n_cols, q = y.n_cols; 
+	// standardize the data
+	vec scaleX, scaleY;
+	mat xs = standardize(x, robust, fallback, scaleX);
+	mat ys = standardize(y, robust, fallback, scaleY);
+	// compute maximum correlations with standardized data
+  vec r = ppControl.maxCor(xs, ys, corControl, A, B, objective);
+  // transform weighting vectors back to original scale
+  for(uword k = 0; k < A.n_cols; k++) {
+    vec a = A.unsafe_col(k); backtransform(a, scaleX);
+	}
+  for(uword k = 0; k < B.n_cols; k++) {
+    vec b = B.unsafe_col(k); backtransform(b, scaleY);
+	}
+  // return vector of maximum correlations
+	return r;
+}
+
+// R interface
+SEXP R_sMaxCorPP(SEXP R_x, SEXP R_y, SEXP R_method, SEXP R_corControl,
+		SEXP R_algorithm, SEXP R_ppControl, SEXP R_fallback) {
+	// initializations
+	NumericMatrix Rcpp_x(R_x), Rcpp_y(R_y);	// convert data to Rcpp types
+	mat x(Rcpp_x.begin(), Rcpp_x.nrow(), Rcpp_x.ncol(), false);	// convert data
+	mat y(Rcpp_y.begin(), Rcpp_y.nrow(), Rcpp_y.ncol(), false);	// to arma types
+	string method = as<string>(R_method);		// convert character string
+	List Rcpp_corControl(R_corControl);			// list of control parameters
+	string algorithm = as<string>(R_algorithm);	// convert character string
+	List Rcpp_ppControl(R_ppControl);			  // list of control parameters
+	bool fallback = as<bool>(R_fallback);		// convert to boolean
+	// initialize results
+	vec r, lambdaX, lambdaY, objective;
+	mat A, B;
+  if(algorithm == "grid") {
+		// define control object for alternate grid searches
+		SparseGridControl ppControl(Rcpp_ppControl);
+		// define control object for the correlations and call the arma version
+		if(method == "spearman") {
+			CorSpearmanControl corControl(Rcpp_corControl);
+			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
+          A, B, objective);
+		} else if(method == "kendall") {
+			CorKendallControl corControl(Rcpp_corControl);
+			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
+          A, B, objective);
+		} else if(method == "quadrant") {
+			CorQuadrantControl corControl(Rcpp_corControl);
+			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
+          A, B, objective);
+		} else if(method == "M") {
+			CorMControl corControl(Rcpp_corControl);
+			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
+          A, B, objective);
+		} else if(method == "pearson") {
+			CorPearsonControl corControl;
+			r = sMaxCorPP(x, y, corControl, ppControl, false, false, 
+          A, B, objective);
+		} else {
+			error("method not available");
+		}
+    lambdaX = ppControl.lambdaX; lambdaY = ppControl.lambdaY; 
+	} else {
+		error("algorithm not available");
+	}
+	// wrap and return result
+	return List::create(
+			Named("cor") = wrap(r.begin(), r.end()),
+			Named("A") = A,
+  		Named("B") = B,
+    	Named("lambdaX") = wrap(lambdaX.begin(), lambdaX.end()),
+    	Named("lambdaY") = wrap(lambdaY.begin(), lambdaY.end()),
+    	Named("objective") = wrap(objective.begin(), objective.end())
 			);
 }
