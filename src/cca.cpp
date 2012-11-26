@@ -898,47 +898,42 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
   		}
 		} else if((p > 1) && (q > 1)) {
 			// both data sets are multivariate
-//    	uword nLambdaX = lambdaX.n_elem, nLambdaY = lambdaY.n_elem;
-//      uword nLambda = nLambdaX * nLambdaY;
-//      r.set_size(nLambda); objective.set_size(nLambda);
-//      A.ones(p, nLambda); B.set_size(q, nLambda); 
-//      // find order of x and y variables
-//			uvec orderX(p), orderY(q);
-//			vec a = zeros<vec>(p), b = zeros<vec>(q);
-//			bool startWithX;
-//			findOrder(x, y, corControl, orderX, orderY, maxCor, a, b, startWithX);
-//      // compute initial value of objective function (L1 norms are 1)
-//  		// compute maximum correlation for each combination of penalty parameters
-//      for(int k = nLambdaX-1; k >= 0; k--) {
-//        for(int l = nLambdaY-1; l >= 0; l--) {
-//      		double penaltyX = lambdaX(k) * norm(a, 1);
-//          double penaltyY = lambdaY(l) * norm(b, 1);
-//		    	maxObjective = maxCor - penaltyX - penaltyY;
-//    			Rprintf("lambdaX = %f, lambdaY=%f\n", lambdaX(k), lambdaY(l));
-//          Rprintf("  before: maxCor = %f, maxObjective = %f\n", maxCor, maxObjective);
-//          // perform alternate grid searches
-//	    		if(startWithX) {
-//		    		// start with grid search for x
-//            maxCorFit(x, orderX, lambdaX(k), y, orderY, lambdaY(l), corControl, 
-//                maxCor, a, b, penaltyX, penaltyY, maxObjective);
-//    			} else {
-//	    			// start with grid search for y
-//            maxCorFit(y, orderY, lambdaY(l), x, orderX, lambdaX(k), corControl, 
-//                maxCor, b, a, penaltyY, penaltyX, maxObjective);
-//  			  }
-//          Rprintf("  after: maxCor = %f, maxObjective = %f\n", maxCor, maxObjective);
-//          uword kl = k * nLambdaX + l;
-//          r(kl) = maxCor;
-//          A.col(kl) = a;
-//          B.col(kl) = b;
-//          objective(kl) = maxObjective;
-//        }
-//        // reset values
-//        uword kl = k * nLambdaX + nLambdaY - 1;
-//        maxCor = r(kl);
-//        a = A.col(kl);
-//        b = B.col(kl);
-//			}
+    	uword nLambdaX = lambdaX.n_elem, nLambdaY = lambdaY.n_elem;
+      uword nLambda = nLambdaX * nLambdaY;
+      r.set_size(nLambda); objective.set_size(nLambda);
+      A.ones(p, nLambda); B.set_size(q, nLambda);
+      // find order of x and y variables
+			uvec orderX(p), orderY(q);
+			vec a = zeros<vec>(p), b = zeros<vec>(q);
+			bool startWithX;
+			findOrder(x, y, corControl, orderX, orderY, maxCor, a, b, startWithX);
+  		// compute maximum correlation for each combination of penalty parameters
+      double initialMaxCor = maxCor;
+      vec initialA = a, initialB = b;
+      int kl = nLambda;
+      for(int k = nLambdaX-1; k >= 0; k--) {
+        for(int l = nLambdaY-1; l >= 0; l--) {
+          maxCor = initialMaxCor;
+          a = initialA; b = initialB;
+          double penaltyX = lambdaX(k), penaltyY = lambdaY(l); // L1 norms are 1
+		    	maxObjective = maxCor - penaltyX - penaltyY;
+          // perform alternate grid searches
+	    		if(startWithX) {
+		    		// start with grid search for x
+            maxCorFit(x, orderX, lambdaX(k), y, orderY, lambdaY(l), corControl, 
+                maxCor, a, b, penaltyX, penaltyY, maxObjective);
+    			} else {
+	    			// start with grid search for y
+            maxCorFit(y, orderY, lambdaY(l), x, orderX, lambdaX(k), corControl, 
+                maxCor, b, a, penaltyY, penaltyX, maxObjective);
+  			  }
+          kl--;
+          r(kl) = maxCor;
+          A.col(kl) = a;
+          B.col(kl) = b;
+          objective(kl) = maxObjective;
+        }
+			}
 		}
 	}
 	// return maximum correlation
