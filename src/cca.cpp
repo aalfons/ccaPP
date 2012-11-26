@@ -855,7 +855,7 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
 		}
     objective(0) = r(0);
 	} else {
-    double maxCor, maxObjective;
+    double initialMaxCor, maxCor, maxObjective;
 		if((p > 1) && (q == 1)) {
 			// x is multivariate, y is univariate
 			uword nLambdaX = lambdaX.n_elem;
@@ -865,15 +865,16 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
     	vec yy = y.unsafe_col(0);   // reuse memory
       // find order of x variables
   		uvec orderX(p); 
-      vec a = zeros<vec>(p);
-			findOrder(x, yy, corControl, orderX, maxCor, a);	// column order
+      vec initialA = zeros<vec>(p);
+			findOrder(x, yy, corControl, orderX, initialMaxCor, initialA);
 			// compute maximum correlation for each penalty parameter
       for(int k = nLambdaX-1; k >= 0; k--) {
-        maxObjective = maxCor - lambdaX(k) * norm(a, 1);
+        maxCor = initialMaxCor;
+        vec a = A.unsafe_col(k); a = initialA;
+        maxObjective = maxCor - lambdaX(k);   // L1 norm is 1
         maxCorFit(x, orderX, lambdaX(k), yy, corControl, 
             maxCor, a, maxObjective);
         r(k) = maxCor;
-        A.col(k) = a;
         objective(k) = maxObjective;
   		}
 		} else if((p == 1) && (q > 1)) {
@@ -885,15 +886,16 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
     	vec xx = x.unsafe_col(0);   // reuse memory
       // find order of y variables
   		uvec orderY(q); 
-      vec b = zeros<vec>(q);
-			findOrder(y, xx, corControl, orderY, maxCor, b);  // column order
+      vec initialB = zeros<vec>(q);
+			findOrder(y, xx, corControl, orderY, initialMaxCor, initialB);
 			// compute maximum correlation for each penalty parameter
       for(int k = nLambdaY-1; k >= 0; k--) {
-        maxObjective = maxCor - lambdaY(k) * norm(b, 1);
+        maxCor = initialMaxCor;
+        vec b = B.unsafe_col(k); b = initialB;
+        maxObjective = maxCor - lambdaY(k);   // L1 norm is 1
         maxCorFit(y, orderY, lambdaY(k), xx, corControl, 
             maxCor, b, maxObjective);
         r(k) = maxCor;
-        B.col(k) = b;
         objective(k) = maxObjective;
   		}
 		} else if((p > 1) && (q > 1)) {
@@ -901,19 +903,19 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
     	uword nLambdaX = lambdaX.n_elem, nLambdaY = lambdaY.n_elem;
       uword nLambda = nLambdaX * nLambdaY;
       r.set_size(nLambda); objective.set_size(nLambda);
-      A.ones(p, nLambda); B.set_size(q, nLambda);
+      A.set_size(p, nLambda), B.set_size(q, nLambda);
       // find order of x and y variables
 			uvec orderX(p), orderY(q);
-			vec a = zeros<vec>(p), b = zeros<vec>(q);
+      vec initialA = zeros<vec>(p), initialB = zeros<vec>(q);
 			bool startWithX;
-			findOrder(x, y, corControl, orderX, orderY, maxCor, a, b, startWithX);
-  		// compute maximum correlation for each combination of penalty parameters
-      double initialMaxCor = maxCor;
-      vec initialA = a, initialB = b;
-      int kl = nLambda;
+			findOrder(x, y, corControl, orderX, orderY, initialMaxCor, 
+          initialA, initialB, startWithX);
+    	// compute maximum correlation for each combination of penalty parameters
+      int kl = nLambda-1;
       for(int k = nLambdaX-1; k >= 0; k--) {
         for(int l = nLambdaY-1; l >= 0; l--) {
           maxCor = initialMaxCor;
+          vec a = A.unsafe_col(kl), b = B.unsafe_col(kl);
           a = initialA; b = initialB;
           double penaltyX = lambdaX(k), penaltyY = lambdaY(l); // L1 norms are 1
 		    	maxObjective = maxCor - penaltyX - penaltyY;
@@ -927,11 +929,9 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
             maxCorFit(y, orderY, lambdaY(l), x, orderX, lambdaX(k), corControl, 
                 maxCor, b, a, penaltyY, penaltyX, maxObjective);
   			  }
-          kl--;
           r(kl) = maxCor;
-          A.col(kl) = a;
-          B.col(kl) = b;
           objective(kl) = maxObjective;
+          kl--;
         }
 			}
 		}
