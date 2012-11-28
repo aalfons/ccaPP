@@ -17,6 +17,29 @@ print.cca <- function(x, ...) {
     invisible(x)
 }
 
+#' @S3method print cvFolds
+print.cvFolds <- function(x, ...) {
+  # print general information
+  cvText <- if(x$n == x$K) "Leave-one-out CV" else sprintf("%d-fold CV", x$K)
+  if(x$R > 1) cvText <- paste(cvText, "with", x$R, "replications")
+  cat(paste("\n", cvText, ":", sep=""))
+  # print information on folds (add space between folds and subsets)
+  subsets <- x$subsets
+  if(x$R == 1) {
+    cn <- if("grouping" %in% names(x)) "Group index" else "Index"
+    nblanks <- 2
+  } else {
+    cn <- as.character(seq_len(x$R))
+    nblanks <- 3
+  }
+  nblanks <- max(nchar(as.character(subsets[, 1]))-nchar(cn[1]), 0) + nblanks
+  cn[1] <- paste(c(rep.int(" ", nblanks), cn[1]), collapse="")
+  dimnames(subsets) <- list(Fold=x$which, cn)
+  print(subsets, ...)
+  # return object invisibly
+  invisible(x)
+}
+
 #' @S3method print maxCor
 print.maxCor <- function(x, ...) {
     # print function call
