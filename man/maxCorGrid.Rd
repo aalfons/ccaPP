@@ -10,10 +10,13 @@
     nGrid = 25, select = NULL, tol = 1e-06,
     fallback = FALSE, seed = NULL, ...)
 
-  sMaxCorGrid(x, y, lambda = 0,
+  sMaxCorGrid(x, y, lambdaX = 0, lambdaY = 0,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
-    nGrid = 25, select = NULL, tol = 1e-06,
+    nGrid = 25, select = NULL, tol = 1e-06, folds = NULL,
+    K = 5, R = 1,
+    type = c("random", "consecutive", "interleaved"),
+    grouping = NULL, nCores = 1, cl = NULL,
     fallback = FALSE, seed = NULL, ...)
 }
 \arguments{

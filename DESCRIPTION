@@ -22,6 +22,7 @@ Authors@R: c(person("Andreas", "Alfons", email = "andreas.alfons@kuleuven.be",
 Collate:
     'cca.R'
     'cor.R'
+    'cv.R'
     'fastMAD.R'
     'fastMedian.R'
     'maxCor.R'

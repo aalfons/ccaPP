@@ -18,6 +18,17 @@ checkIndices <- function(indices, max) {
     indices[which(indices > 0 & indices <= max)]
 }    
 
+## call a function by either
+# 1) simply evaluating a supplied function for the basic arguments if there are
+#    no additional arguments in list format
+# 2) evaluating a supplied function with 'do.call' if there are additional 
+#    arguments in list format
+doCall <- function(fun, ..., args = list()) {
+  if(length(args) == 0) {
+    fun(...)
+  } else do.call(fun, c(list(...), args))
+}
+
 ## call C++ to compute ranks of observations in a vector (for testing)
 fastRank <- function(x) {
     x <- as.numeric(x)
@@ -59,6 +70,49 @@ getCorControl <- function(method, control, forceConsistency = TRUE) {
     } else out <- list()  # this case includes Pearson correlation
     # return list of control arguments
     out
+}
+
+## get list of control arguments for projection pursuit algorithm
+getPPControl <- function(algorithm, control, p, q, seed = NULL) {
+  # additional checks for grid search algorithm
+  if(algorithm == "grid") {
+    # check subset of variables to be used for determining the order of 
+    # the variables from the respective other data set
+    select <- control$select
+    control$select <- NULL
+    if(!is.null(select)) {
+      if(is.list(select)) {
+        # make sure select is a list with two index vectors and 
+        # drop invalid indices from each vector
+        select <- rep(select, length.out=2)
+        select <- mapply(function(indices, max) {
+          indices <- as.integer(indices)
+          indices[which(indices > 0 & indices <= max)] - 1
+        }, select, c(p, q))
+        valid <- sapply(select, length) > 0
+        # add the two index vectors to control object
+        if(all(valid)) {
+          control$selectX <- select[[1]]
+          control$selectY <- select[[2]]
+        } else select <- NULL
+      } else {
+        # check number of indices to sample
+        select <- rep(as.integer(select), length.out=2)
+        valid <- !is.na(select) & select > 0 & select < c(p, q)
+        if(all(valid)) {
+          # generate index vectors and add them to control object
+          if(!is.null(seed)) set.seed(seed)
+          control$selectX <- sample.int(p, select[1]) - 1
+          control$selectY <- sample.int(q, select[2]) - 1
+        } else select <- NULL
+      }
+    }
+    if(is.null(select)) {
+      control$selectX <- control$selectY <- integer()
+    }
+  }
+  # return list of control arguments
+  control
 }
 
 ## L1 median (for testing)

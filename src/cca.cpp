@@ -618,7 +618,7 @@ double GridControl::maxCor(const mat& x, const mat& y, CorControl& corControl,
 
 class SparseGridControl: public GridControl {
 public:
-	vec lambdaX, lambdaY;	// penalty parameters
+	vec lambda;   // grid of values for penalty parameters
 	// constructors
 	SparseGridControl();
 	SparseGridControl(List&);
@@ -649,14 +649,12 @@ public:
 
 // constructors
 inline SparseGridControl::SparseGridControl() {
-	lambdaX = zeros<vec>(1);
-	lambdaY = zeros<vec>(1);
+	lambda = zeros<mat>(1, 2);
 }
 inline SparseGridControl::SparseGridControl(List& control)
 : GridControl(control) {
-	SEXP R_lambdaX = control["lambdaX"], R_lambdaY = control["lambdaY"];
-  lambdaX = as<vec>(R_lambdaX);
-  lambdaY = as<vec>(R_lambdaY);
+	SEXP R_lambda = control["lambda"];
+  lambda = as<mat>(R_lambda);
 }
 
 // compute updated weighting vector in grid search
@@ -790,8 +788,8 @@ void SparseGridControl::maxCorFit(const mat& x, const uvec& orderX,
 // workhorse function for maximum correlation between multivariate x and y
 template <class CorControl>
 void SparseGridControl::maxCorFit(const mat& x, const uvec& orderX, 
-    const double& lambda1, const mat& y, const uvec& orderY, 
-    const double& lambda2, CorControl& corControl, double& maxCor, vec& a, 
+    const double& lambdaX, const mat& y, const uvec& orderY, 
+    const double& lambdaY, CorControl& corControl, double& maxCor, vec& a, 
     vec& b, double& penaltyX, double& penaltyY, double& maxObjective) {
   // initializations
   double previousMaxObjective = R_NegInf;
@@ -806,11 +804,11 @@ void SparseGridControl::maxCorFit(const mat& x, const uvec& orderX,
 			altMaxObjective = maxObjective;
 			// maximize correlation functional over a keeping b fixed
 			vec yb = y * b;		// linear combination of columns of y
-			gridSearch(x, orderX, lambda1, yb, penaltyY, corControl,
+			gridSearch(x, orderX, lambdaX, yb, penaltyY, corControl,
 					grid, maxCor, a, penaltyX, maxObjective);
 			// maximize correlation functional over b keeping a fixed
 			vec xa = x * a;		// linear combination of columns of x
-			gridSearch(y, orderY, lambda2, xa, penaltyX, corControl,
+			gridSearch(y, orderY, lambdaY, xa, penaltyX, corControl,
 					grid, maxCor, b, penaltyY, maxObjective);
 			j++;
 		}
@@ -844,7 +842,6 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
 		// both data sets are univariate
 		r.set_size(1); objective.set_size(1);
     A.ones(p, 1); B.ones(q, 1); 
-    lambdaX.zeros(p); lambdaY.zeros(q);
 		vec xx = x.unsafe_col(0), yy = y.unsafe_col(0);	// reuse memory
 		// compute correlation
     r(0) = corControl.cor(xx, yy);
@@ -856,53 +853,46 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
     objective(0) = r(0);
 	} else {
     double initialMaxCor, maxCor, maxObjective;
-		if((p > 1) && (q == 1)) {
+		uword nLambda = lambda.n_rows;
+    r.set_size(nLambda); objective.set_size(nLambda);
+    if((p > 1) && (q == 1)) {
 			// x is multivariate, y is univariate
-			uword nLambdaX = lambdaX.n_elem;
-      r.set_size(nLambdaX); objective.set_size(nLambdaX);
-      A.set_size(p, nLambdaX); B.ones(q, nLambdaX); 
-      lambdaY.zeros(q);
+      A.set_size(p, nLambda); B.ones(q, nLambda); 
     	vec yy = y.unsafe_col(0);   // reuse memory
       // find order of x variables
   		uvec orderX(p); 
       vec initialA = zeros<vec>(p);
 			findOrder(x, yy, corControl, orderX, initialMaxCor, initialA);
 			// compute maximum correlation for each penalty parameter
-      for(int k = nLambdaX-1; k >= 0; k--) {
+      for(uword k = 0; k < nLambda; k++) {
         maxCor = initialMaxCor;
         vec a = A.unsafe_col(k); a = initialA;
-        maxObjective = maxCor - lambdaX(k);   // L1 norm is 1
-        maxCorFit(x, orderX, lambdaX(k), yy, corControl, 
+        maxObjective = maxCor - lambda(k,0);   // L1 norm is 1
+        maxCorFit(x, orderX, lambda(k,0), yy, corControl, 
             maxCor, a, maxObjective);
         r(k) = maxCor;
         objective(k) = maxObjective;
   		}
 		} else if((p == 1) && (q > 1)) {
 			// x is univariate, y is multivariate
-  		uword nLambdaY = lambdaY.n_elem;
-      r.set_size(nLambdaY); objective.set_size(nLambdaY);
-      A.ones(p, nLambdaY); B.set_size(q, nLambdaY); 
-      lambdaX.zeros(p);
+      A.ones(p, nLambda); B.set_size(q, nLambda); 
     	vec xx = x.unsafe_col(0);   // reuse memory
       // find order of y variables
   		uvec orderY(q); 
       vec initialB = zeros<vec>(q);
 			findOrder(y, xx, corControl, orderY, initialMaxCor, initialB);
 			// compute maximum correlation for each penalty parameter
-      for(int k = nLambdaY-1; k >= 0; k--) {
+      for(uword k = 0; k < nLambda; k++) {
         maxCor = initialMaxCor;
         vec b = B.unsafe_col(k); b = initialB;
-        maxObjective = maxCor - lambdaY(k);   // L1 norm is 1
-        maxCorFit(y, orderY, lambdaY(k), xx, corControl, 
+        maxObjective = maxCor - lambda(k,1);   // L1 norm is 1
+        maxCorFit(y, orderY, lambda(k,1), xx, corControl, 
             maxCor, b, maxObjective);
         r(k) = maxCor;
         objective(k) = maxObjective;
   		}
 		} else if((p > 1) && (q > 1)) {
 			// both data sets are multivariate
-    	uword nLambdaX = lambdaX.n_elem, nLambdaY = lambdaY.n_elem;
-      uword nLambda = nLambdaX * nLambdaY;
-      r.set_size(nLambda); objective.set_size(nLambda);
       A.set_size(p, nLambda), B.set_size(q, nLambda);
       // find order of x and y variables
 			uvec orderX(p), orderY(q);
@@ -911,28 +901,24 @@ vec SparseGridControl::maxCor(const mat& x, const mat& y,
 			findOrder(x, y, corControl, orderX, orderY, initialMaxCor, 
           initialA, initialB, startWithX);
     	// compute maximum correlation for each combination of penalty parameters
-      int kl = nLambda-1;
-      for(int k = nLambdaX-1; k >= 0; k--) {
-        for(int l = nLambdaY-1; l >= 0; l--) {
-          maxCor = initialMaxCor;
-          vec a = A.unsafe_col(kl), b = B.unsafe_col(kl);
-          a = initialA; b = initialB;
-          double penaltyX = lambdaX(k), penaltyY = lambdaY(l); // L1 norms are 1
-		    	maxObjective = maxCor - penaltyX - penaltyY;
-          // perform alternate grid searches
-	    		if(startWithX) {
-		    		// start with grid search for x
-            maxCorFit(x, orderX, lambdaX(k), y, orderY, lambdaY(l), corControl, 
-                maxCor, a, b, penaltyX, penaltyY, maxObjective);
-    			} else {
-	    			// start with grid search for y
-            maxCorFit(y, orderY, lambdaY(l), x, orderX, lambdaX(k), corControl, 
-                maxCor, b, a, penaltyY, penaltyX, maxObjective);
-  			  }
-          r(kl) = maxCor;
-          objective(kl) = maxObjective;
-          kl--;
-        }
+      for(uword k = 0; k < nLambda; k++) {
+        maxCor = initialMaxCor;
+        vec a = A.unsafe_col(k), b = B.unsafe_col(k);
+        a = initialA; b = initialB;
+        double penaltyX = lambda(k,0), penaltyY = lambda(k,1); // L1 norms are 1
+	    	maxObjective = maxCor - penaltyX - penaltyY;
+        // perform alternate grid searches
+    		if(startWithX) {
+	    		// start with grid search for x
+          maxCorFit(x, orderX, lambda(k,0), y, orderY, lambda(k,1), corControl, 
+              maxCor, a, b, penaltyX, penaltyY, maxObjective);
+  			} else {
+    			// start with grid search for y
+          maxCorFit(y, orderY, lambda(k,1), x, orderX, lambda(k,0), corControl, 
+              maxCor, b, a, penaltyY, penaltyX, maxObjective);
+			  }
+        r(k) = maxCor;
+        objective(k) = maxObjective;
 			}
 		}
 	}
@@ -1376,15 +1362,15 @@ SEXP R_sMaxCorPP(SEXP R_x, SEXP R_y, SEXP R_method, SEXP R_corControl,
 		} else {
 			error("method not available");
 		}
-    lambdaX = ppControl.lambdaX; lambdaY = ppControl.lambdaY; 
+    lambdaX = ppControl.lambda.col(0); lambdaY = ppControl.lambda.col(1); 
 	} else {
 		error("algorithm not available");
 	}
 	// wrap and return result
 	return List::create(
 			Named("cor") = wrap(r.begin(), r.end()),
-			Named("A") = A,
-  		Named("B") = B,
+			Named("a") = A,
+  		Named("b") = B,
     	Named("lambdaX") = wrap(lambdaX.begin(), lambdaX.end()),
     	Named("lambdaY") = wrap(lambdaY.begin(), lambdaY.end()),
     	Named("objective") = wrap(objective.begin(), objective.end())

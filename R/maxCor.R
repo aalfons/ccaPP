@@ -140,18 +140,19 @@ maxCorGrid <- function(x, y,
 sMaxCorGrid <- function(x, y, lambdaX = 0, lambdaY = 0, 
                         method = c("spearman", "kendall", "quadrant", 
                                    "M", "pearson"), 
-                        control = list(...), nIterations = 10, nAlternate = 10, 
-                        nGrid = 25, select = NULL, tol = 1e-06, 
+                        control = list(...), nIterations = 10, 
+                        nAlternate = 10, nGrid = 25, select = NULL, 
+                        tol = 1e-06, folds = NULL, K = 5, R = 1, 
+                        type = c("random", "consecutive", "interleaved"), 
+                        grouping = NULL, nCores = 1, cl = NULL, 
                         fallback = FALSE, seed = NULL, ...) {
   ## initializations
   matchedCall <- match.call()
   ## define list of control arguments for algorithm
   lambdaX <- as.numeric(lambdaX)
   lambdaX[is.na(lambdaX)] <- formals()$lambdaX
-  lambdaX <- sort(unique(lambdaX))
   lambdaY <- as.numeric(lambdaY)
   lambdaY[is.na(lambdaY)] <- formals()$lambdaY
-  lambdaY <- sort(unique(lambdaY))
   nIterations <- as.integer(nIterations)
   nAlternate <- as.integer(nAlternate)
   nGrid <- as.integer(nGrid)
@@ -160,7 +161,9 @@ sMaxCorGrid <- function(x, y, lambdaX = 0, lambdaY = 0,
                     nAlternate=nAlternate, nGrid=nGrid, select=select, tol=tol)
   ## call workhorse function
   maxCor <- sMaxCorPP(x, y, method=method, corControl=control, algorithm="grid", 
-                      ppControl=ppControl, fallback=fallback, seed=seed)
+                      ppControl=ppControl, folds=folds, K=K, R=R, type=type, 
+                      grouping=grouping, nCores=nCores, cl=cl, 
+                      fallback=fallback, seed=seed)
   maxCor$call <- matchedCall
   maxCor
 }
@@ -268,10 +271,12 @@ maxCorPP <- function(x, y, ...) {
 
 
 ## workhorse function for sparse maximum correlation
+#' @import parallel
 sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant", 
                                        "M", "pearson"), 
-                      corControl, algorithm = "grid", ppControl, 
-                      fallback = FALSE, seed = NULL) {
+                      corControl, algorithm = "grid", ppControl, folds = NULL, 
+                      nCores = 1, cl = NULL, fallback = FALSE, seed = NULL, 
+                      ...) {
   ## initializations
   x <- as.matrix(x)
   y <- as.matrix(y)
@@ -282,55 +287,82 @@ sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant",
   ## prepare the data and call C++ function
   if(n == 0 || p == 0 || q == 0) {
     # zero dimension
-    maxCor <- list(cor=NA, a=numeric(), b=numeric(), objective=NA)
+    maxCor <- list(cor=NA, a=numeric(), b=numeric(), lambdaX=NA, 
+                   lambdaY=NA, objective=NA)
   } else {
-    # check method and get list of control arguments
+    # get list of control arguments
     method <- match.arg(method)
-    corControl <- getCorControl(method, corControl, forceConsistency)
-    # additional checks for grid search algorithm
-    if(algorithm == "grid") {
-      # check subset of variables to be used for determining the order of 
-      # the variables from the respective other data set
-      select <- ppControl$select
-      ppControl$select <- NULL
-      if(!is.null(select)) {
-        if(is.list(select)) {
-          # make sure select is a list with two index vectors and 
-          # drop invalid indices from each vector
-          select <- rep(select, length.out=2)
-          select <- mapply(function(indices, max) {
-            indices <- as.integer(indices)
-            indices[which(indices > 0 & indices <= max)] - 1
-          }, select, c(p, q))
-          valid <- sapply(select, length) > 0
-          # add the two index vectors to control object
-          if(all(valid)) {
-            ppControl$selectX <- select[[1]]
-            ppControl$selectY <- select[[2]]
-          } else select <- NULL
-        } else {
-          # check number of indices to sample
-          select <- rep(as.integer(select), length.out=2)
-          valid <- !is.na(select) & select > 0 & select < c(p, q)
-          if(all(valid)) {
-            # generate index vectors and add them to control object
-            if(!is.null(seed)) set.seed(seed)
-            ppControl$selectX <- sample.int(p, select[1]) - 1
-            ppControl$selectY <- sample.int(q, select[2]) - 1
-          } else select <- NULL
-        }
+    corControl <- getCorControl(method, corControl, forceConsistency=FALSE)
+    fallback <- isTRUE(fallback)
+    if(!is.null(seed)) set.seed(seed)
+    ppControl <- getPPControl(algorithm, ppControl, p=p, q=q)
+    # check grid of values for the penalty parameters
+    lambdaX <- ppControl$lambdaX
+    lambdaY <- ppControl$lambdaY
+    ppControl$lambdaX <- NULL
+    ppControl$lambdaY <- NULL
+    lambdaX <- if(p == 1) 0 else sort(unique(lambdaX))
+    lambdaY <- if(q == 1) 0 else sort(unique(lambdaY))
+    lambda <- as.matrix(expand.grid(lambdaX=lambdaX, lambdaY=lambdaY))
+    ppControl$lambda <- lambda
+    # check whether cross-validation over grid of tuning parameters is necessary
+    useCV <- nrow(lambda) > 1
+    if(useCV) {
+      if(is.null(folds)) folds <- cvFolds(n, ...)
+      # set up parallel computing if requested
+      haveCl <- inherits(cl, "cluster")
+      if(haveCl) haveNCores <- FALSE
+      else {
+        if(is.na(nCores)) nCores <- detectCores()  # use all available cores
+        if(!is.numeric(nCores) || is.infinite(nCores) || nCores < 1) {
+          nCores <- 1  # use default value
+          warning("invalid value of 'nCores'; using default value")
+        } else nCores <- as.integer(nCores)
+        R <- folds$R
+        nCores <- if(R == 1) min(nCores, folds$K) else min(nCores, R)
+        haveNCores <- nCores > 1
       }
-      if(is.null(select)) {
-        ppControl$selectX <- ppControl$selectY <- integer()
+      # check whether parallel computing should be used
+      useParallel <- haveNCores || haveCl
+      # set up multicore or snow cluster if not supplied
+      if(haveNCores) {
+        if(.Platform$OS.type == "windows") {
+          cl <- makePSOCKcluster(rep.int("localhost", nCores))
+        } else cl <- makeForkCluster(nCores)
+        on.exit(stopCluster(cl))
       }
+      # perform cross-validation over grid of tuning parameters
+      call <- call("sMaxCorPPFit", method=method, corControl=corControl, 
+                   algorithm=algorithm, ppControl=ppControl, fallback=fallback)
+      call[[1]] <- sMaxCorPPFit  # necessary to work with parallel computing
+      corFun <- switch(method, spearman=corSpearman, kendall=corKendall, 
+                       quadrant=corQuadrant, M=corM, pearson=corPearson)
+      cv <- cvMaxCor(call, x, y, folds=folds, corFun=corFun, 
+                     corArgs=corControl, cl=cl)
+      # determine the optimal tuning parameters
+      ppControl$lambda <- lambda[which.max(cv), , drop=FALSE]
     }
-    # call C++ function
-    maxCor <- .Call("R_sMaxCorPP", R_x=x, R_y=y, R_method=method, 
-                    R_corControl=corControl, R_algorithm=algorithm, 
-                    R_ppControl=ppControl, R_fallback=isTRUE(fallback), 
-                    PACKAGE="ccaPP")
+    # compute the final solution
+    maxCor <- sMaxCorPPFit(x, y, method=method, corControl=corControl, 
+                           algorithm=algorithm, ppControl=ppControl, 
+                           fallback=fallback)
+    maxCor$a <- drop(maxCor$a)
+    maxCor$b <- drop(maxCor$b)
+    if(useCV) maxCor$cv <- cbind(lambda, CV=cv)
   }
   ## assign class and return results
   class(maxCor) <- "maxCor"
   maxCor
+}
+
+## simple wrapper for calling the C++ function
+sMaxCorPPFit <- function(x, y, method = c("spearman", "kendall", "quadrant", 
+                                          "M", "pearson"), 
+                         corControl, algorithm = "grid", ppControl, 
+                         fallback = FALSE) {
+  # call C++ function
+  maxCor <- .Call("R_sMaxCorPP", R_x=x, R_y=y, R_method=method, 
+                  R_corControl=corControl, R_algorithm=algorithm, 
+                  R_ppControl=ppControl, R_fallback=fallback, 
+                  PACKAGE="ccaPP")
 }

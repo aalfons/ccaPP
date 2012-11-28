@@ -346,43 +346,7 @@ ccaPP <- function(x, y, k = 1,
         # check method and get list of control arguments
         method <- match.arg(method)
         corControl <- getCorControl(method, corControl, forceConsistency)
-        # additional checks for grid search algorithm
-        if(algorithm == "grid") {
-            # check subset of variables to be used for determining the order of 
-            # the variables from the respective other data set
-            select <- ppControl$select
-            ppControl$select <- NULL
-            if(!is.null(select)) {
-                if(is.list(select)) {
-                    # make sure select is a list with two index vectors and 
-                    # drop invalid indices from each vector
-                    select <- rep(select, length.out=2)
-                    select <- mapply(function(indices, max) {
-                            indices <- as.integer(indices)
-                            indices[which(indices > 0 & indices <= max)] - 1
-                        }, select, c(p, q))
-                    valid <- sapply(select, length) > 0
-                    # add the two index vectors to control object
-                    if(all(valid)) {
-                        ppControl$selectX <- select[[1]]
-                        ppControl$selectY <- select[[2]]
-                    } else select <- NULL
-                } else {
-                    # check number of indices to sample
-                    select <- rep(as.integer(select), length.out=2)
-                    valid <- !is.na(select) & select > 0 & select < c(p, q)
-                    if(all(valid)) {
-                        # generate index vectors and add them to control object
-                        if(!is.null(seed)) set.seed(seed)
-                        ppControl$selectX <- sample.int(p, select[1]) - 1
-                        ppControl$selectY <- sample.int(q, select[2]) - 1
-                    } else select <- NULL
-                }
-            }
-            if(is.null(select)) {
-                ppControl$selectX <- ppControl$selectY <- integer()
-            }
-        }
+        ppControl <- getPPControl(algorithm, ppControl, p=p, q=q, seed=seed)
         # call C++ function
         cca <- .Call("R_ccaPP", R_x=x, R_y=y, R_k=k, R_method=method, 
             R_corControl=corControl, R_algorithm=algorithm, 
