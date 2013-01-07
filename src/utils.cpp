@@ -53,9 +53,10 @@ double median(vector<double>& x) {
 	} else {
 		// even number of observations, take the mean of the two middle ones
 		nth_element(x.begin(), x.begin()+half, x.end());
-		double tmp = x[half];
-		nth_element(x.begin(), x.begin()+half+1, x.end());
-		med = 0.5 * (tmp + x[half+1]);
+//		double tmp = x[half];
+//		nth_element(x.begin(), x.begin()+half+1, x.end());
+//  	med = 0.5 * (tmp + x[half+1]);
+    med = 0.5 * (x[half] + *min_element(x.begin()+half+1, x.end()));
 	}
 	return med;
 }

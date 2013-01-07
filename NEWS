@@ -6,6 +6,8 @@ Changes in ccaPP version 0.3.0
 
 Changes in ccaPP version 0.2.1
 
+    + Slightly faster version of fastMedian().
+    
     + Bugfix in corM(): robust starting values now work with dummy variables.
 
 
