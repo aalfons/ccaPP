@@ -737,7 +737,6 @@ void SparseGridControl::gridSearch(const mat& x, const uvec& orderX,
 		// perform grid search for the current canonical basis vector
 		vec corY(nGrid), objective(nGrid), penalties(nGrid);
 		for(uword k = 0; k < nGrid; k++) {
-			double angle = grid(k);
 			vec currentA = getVector(a, grid(k), orderJ);
 			corY(k) = abs(corControl.cor(x * currentA, y));
 			penalties(k) = lambda * norm(currentA, 1);

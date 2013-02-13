@@ -72,8 +72,8 @@ corXY <- function(xy, corFun = corSpearman, corArgs = list()) {
   # compute the correlation between each pair of linear combinations
   if(p == 1) doCall(corFun, xy[, 1], xy[, 2], args=corArgs)
   else {
-    sapply(seq_len(p), function(i) {
-      doCall(corFun, xy[, i], xy[, p+i], args=corArgs)
+    sapply(seq_len(p), function(j) {
+      doCall(corFun, xy[, j], xy[, p+j], args=corArgs)
     })
   }
 }
