@@ -67,3 +67,19 @@ print.permTest <- function(x, ...) {
     # return object invisibly
     invisible(x)
 }
+
+#' @S3method print sMaxCor
+print.sMaxCor <- function(x, ...) {
+  print.maxCor(x, ...)
+  # print optimal tuning parameters
+  if(!is.null(cv <- x$cv)) {
+    haveGridX <- any(cv[, "lambdaX"] != 0)
+    haveGridY <- any(cv[, "lambdaY"] != 0)
+    if(haveGridX && haveGridY) cat("\nOptimal tuning parameters:\n")
+    else cat("\nOptimal tuning parameter:\n")
+    if(haveGridX) cat(sprintf("lambdaX: %f\n", x$lambdaX))
+    if(haveGridY) cat(sprintf("lambdaY: %f\n", x$lambdaY))
+  }
+  # return object invisibly
+  invisible(x)
+}

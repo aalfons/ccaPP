@@ -449,7 +449,6 @@ void GridControl::gridSearch(const mat& x, const uvec& orderX, const vec& y,
 		// perform grid search for the current canonical basis vector
 		vec corY(nGrid);
 		for(uword k = 0; k < nGrid; k++) {
-			double angle = grid(k);
 			vec currentA = getVector(a, grid(k), orderJ);
 			corY(k) = abs(corControl.cor(x * currentA, y));
 		}
@@ -1300,8 +1299,6 @@ template <class CorControl, class PPControl>
 vec sMaxCorPP(const mat& x, const mat& y, CorControl& corControl,
   	PPControl& ppControl, const bool& robust, const bool& fallback,
 		mat& A, mat& B, vec& objective) {
-	// initializations
-	const uword p = x.n_cols, q = y.n_cols; 
 	// standardize the data
 	vec scaleX, scaleY;
 	mat xs = standardize(x, robust, fallback, scaleX);

@@ -383,7 +383,7 @@ sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant",
     if(useCV) maxCor$cv <- cbind(lambda, CV=cv)
   }
   ## assign class and return results
-  class(maxCor) <- "maxCor"
+  class(maxCor) <- c("sMaxCor", "maxCor")
   maxCor
 }
 
