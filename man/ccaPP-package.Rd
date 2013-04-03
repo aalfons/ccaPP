@@ -15,7 +15,7 @@ Canonical correlation analysis and maximum correlation via
 Package: \tab ccaPP\cr
 Type: \tab Package\cr
 Version: \tab 0.3.0\cr
-Date: \tab 2012-10-18\cr
+Date: \tab 2013-04-03\cr
 Depends: \tab Rcpp (>= 0.9.10), parallel, pcaPP (>= 1.8-1)\cr
 Imports: \tab RcppArmadillo (>= 0.2.36)\cr
 LinkingTo: \tab Rcpp, RcppArmadillo\cr
@@ -48,6 +48,6 @@ permTest                (Robust) permutation test for independence
 Andreas Alfons [aut, cre],
   David Simcha [ctb]
 
-Maintainer: Andreas Alfons <andreas.alfons@kuleuven.be>
+Maintainer: Andreas Alfons <alfons@ese.eur.nl>
 }
 \keyword{package}
