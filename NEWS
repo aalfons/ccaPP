@@ -1,3 +1,9 @@
+Changes in ccaPP version 0.3.0
+
+    + Added correlation based on the bivariate MCD estimator.
+
+
+
 Changes in ccaPP version 0.2.1
 
     + Slightly faster version of fastMedian().

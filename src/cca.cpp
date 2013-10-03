@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         KU Leuven
+ *         Erasmus University Rotterdam
  */
 
 #include <R.h>
@@ -163,6 +163,34 @@ inline CorMControl::CorMControl(List& control) {
 // method to compute correlation
 double CorMControl::cor(const vec& x, const vec& y) {
 	return corM(x, y, prob, initial, tol);
+}
+
+
+// -------------------------------
+// control class for MCD-estimator
+// -------------------------------
+
+class CorMCDControl {
+public:
+  double alpha;
+	// constructors
+	CorMCDControl();
+	CorMCDControl(List&);
+	// method to compute correlation
+	double cor(const vec&, const vec&);
+};
+
+// constructors
+inline CorMCDControl::CorMCDControl() {
+	alpha = 0.5;
+}
+inline CorMCDControl::CorMCDControl(List& control) {
+	alpha = as<double>(control["alpha"]);
+}
+
+// method to compute correlation
+double CorMCDControl::cor(const vec& x, const vec& y) {
+	return corMCD(x, y, alpha);
 }
 
 
@@ -918,6 +946,9 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 		} else if(method == "M") {
 			CorMControl corControl(Rcpp_corControl);
 			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
+  	} else if(method == "MCD") {
+			CorMCDControl corControl(Rcpp_corControl);
+			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
 		} else if(method == "pearson") {
 			CorPearsonControl corControl;
 			r = ccaPP(x, y, k, corControl, ppControl, false, false, A, B);
@@ -939,6 +970,9 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
 		} else if(method == "M") {
 			CorMControl corControl(Rcpp_corControl);
+			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
+    } else if(method == "MCD") {
+			CorMCDControl corControl(Rcpp_corControl);
 			r = ccaPP(x, y, k, corControl, ppControl, true, fallback, A, B);
 		} else if(method == "pearson") {
 			CorPearsonControl corControl;

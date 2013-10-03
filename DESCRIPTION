@@ -1,12 +1,13 @@
 Package: ccaPP
 Type: Package
 Title: (Robust) canonical correlation analysis via projection pursuit
-Version: 0.2.1
-Date: 2012-10-15
+Version: 0.3.0
+Date: 2013-10-03
 Depends:
     Rcpp (>= 0.9.10),
     parallel,
-    pcaPP (>= 1.8-1)
+    pcaPP (>= 1.8-1),
+    robustbase
 Imports:
     RcppArmadillo (>= 0.2.36)
 LinkingTo: Rcpp, RcppArmadillo
@@ -19,12 +20,3 @@ License: GPL (>= 2)
 LazyLoad: yes
 Authors@R: c(person("Andreas", "Alfons", email = "andreas.alfons@kuleuven.be",
     role = c("aut", "cre")), person("David", "Simcha", role = "ctb"))
-Collate:
-    'cca.R'
-    'cor.R'
-    'fastMAD.R'
-    'fastMedian.R'
-    'maxCor.R'
-    'permTest.R'
-    'print.R'
-    'utils.R'

@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         KU Leuven
+ *         Erasmus University Rotterdam
  */
 
 #ifndef _ccaPP_COR_H
@@ -23,6 +23,7 @@ RcppExport SEXP R_corKendall(SEXP R_x, SEXP R_y, SEXP R_consistent);
 RcppExport SEXP R_corQuadrant(SEXP R_x, SEXP R_y, SEXP R_consistent);
 RcppExport SEXP R_corM(SEXP R_x, SEXP R_y, SEXP R_prob,
 		SEXP initial, SEXP R_tol);
+//RcppExport SEXP R_corMcd(SEXP R_x, SEXP R_y, SEXP R_alpha); // for testing
 
 // functions to be used within C++
 double corPearson(const vec& x, const vec& y);
@@ -31,5 +32,6 @@ double corKendall(const vec& x, const vec& y, const bool& consistent);
 double corQuadrant(const vec& x, const vec& y, const bool& consistent);
 double corM(const vec& x, const vec& y, const double& prob,
 		const string& initial, const double& tol);
+double corMCD(const vec& x, const vec& y, const double& alpha);
 
 #endif

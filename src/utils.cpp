@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         KU Leuven
+ *         Erasmus University Rotterdam
  */
 
 #include <R.h>
@@ -30,13 +30,13 @@ vec l1Median(const mat& x) {
 	return center;
 }
 
-// R interface to l1Median() (for testing)
-SEXP R_l1Median(SEXP R_x) {
-	NumericMatrix Rcpp_x(R_x);	// convert data to Rcpp type
-	mat x(Rcpp_x.begin(), Rcpp_x.nrow(), Rcpp_x.ncol(), false);	// reuse memory
-	vec center = l1Median(x);	// call arma version
-	return wrap(center.memptr(), center.memptr() + center.n_elem);
-}
+//// R interface to l1Median() (for testing)
+//SEXP R_l1Median(SEXP R_x) {
+//	NumericMatrix Rcpp_x(R_x);	// convert data to Rcpp type
+//	mat x(Rcpp_x.begin(), Rcpp_x.nrow(), Rcpp_x.ncol(), false);	// reuse memory
+//	vec center = l1Median(x);	// call arma version
+//	return wrap(center.memptr(), center.memptr() + center.n_elem);
+//}
 
 // median using std::vector
 // order of observations is messed up
@@ -219,10 +219,10 @@ vec rank(const vec& x) {
 	return ranks;
 }
 
-// R interface to rank() (for testing)
-SEXP R_rank(SEXP R_x) {
-	NumericVector Rcpp_x(R_x);						// convert data to Rcpp type
-	vec x(Rcpp_x.begin(), Rcpp_x.size(), false);	// convert data to arma type
-	vec ranks = rank(x);							// call arma version
-	return wrap(ranks.memptr(), ranks.memptr() + ranks.n_elem);
-}
+//// R interface to rank() (for testing)
+//SEXP R_rank(SEXP R_x) {
+//	NumericVector Rcpp_x(R_x);						// convert data to Rcpp type
+//	vec x(Rcpp_x.begin(), Rcpp_x.size(), false);	// convert data to arma type
+//	vec ranks = rank(x);							// call arma version
+//	return wrap(ranks.memptr(), ranks.memptr() + ranks.n_elem);
+//}
