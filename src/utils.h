@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         Erasmus University Rotterdam
+ *         KU Leuven
  */
 
 #ifndef _ccaPP_UTILS_H
@@ -15,10 +15,10 @@ using namespace arma;
 using namespace std;
 
 // functions to export to R
-//RcppExport SEXP R_l1Median(SEXP R_x);       // for testing
+RcppExport SEXP R_l1Median(SEXP R_x);					// for testing
 RcppExport SEXP R_fastMedian(SEXP R_x);
 RcppExport SEXP R_fastMAD(SEXP R_x, SEXP R_constant);
-//RcppExport SEXP R_rank(SEXP R_x);           // for testing
+RcppExport SEXP R_rank(SEXP R_x);						// for testing
 
 // functions to be used within C++
 vec l1Median(const mat& x);

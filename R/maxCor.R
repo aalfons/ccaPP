@@ -1,7 +1,7 @@
-# ------------------------------------
+# ----------------------
 # Author: Andreas Alfons
-#         Erasmus University Rotterdam
-# ------------------------------------
+#         KU Leuven
+# ----------------------
 
 #' (Robust) maximum correlation via alternating series of grid searches
 #' 
@@ -113,24 +113,24 @@
 #' @export
 
 maxCorGrid <- function(x, y, 
-                       method = c("spearman", "kendall", "quadrant", "M", "MCD", "pearson"), 
-                       control = list(...), nIterations = 10, nAlternate = 10, 
-                       nGrid = 25, select = NULL, tol = 1e-06, fallback = FALSE, 
-                       seed = NULL, ...) {
-  ## initializations
-  matchedCall <- match.call()
-  ## define list of control arguments for algorithm
-  nIterations <- as.integer(nIterations)
-  nAlternate <- as.integer(nAlternate)
-  nGrid <- as.integer(nGrid)
-  tol <- as.numeric(tol)
-  ppControl <- list(nIterations=nIterations, nAlternate=nAlternate, 
-                    nGrid=nGrid, select=select, tol=tol)
-  ## call workhorse function
-  maxCor <- maxCorPP(x, y, method=method, corControl=control, algorithm="grid", 
-                     ppControl=ppControl, fallback=fallback, seed=seed)
-  maxCor$call <- matchedCall
-  maxCor
+        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+        control = list(...), nIterations = 10, nAlternate = 10, nGrid = 25, 
+        select = NULL, tol = 1e-06, fallback = FALSE, seed = NULL, ...) {
+    ## initializations
+    matchedCall <- match.call()
+    ## define list of control arguments for algorithm
+    nIterations <- as.integer(nIterations)
+    nAlternate <- as.integer(nAlternate)
+    nGrid <- as.integer(nGrid)
+    tol <- as.numeric(tol)
+    ppControl <- list(nIterations=nIterations, nAlternate=nAlternate, 
+        nGrid=nGrid, select=select, tol=tol)
+    ## call workhorse function
+    maxCor <- maxCorPP(x, y, method=method, corControl=control, 
+        algorithm="grid", ppControl=ppControl, fallback=fallback, 
+        seed=seed)
+    maxCor$call <- matchedCall
+    maxCor
 }
 
 
@@ -210,27 +210,26 @@ maxCorGrid <- function(x, y,
 #' @export
 
 maxCorProj <- function(x, y, 
-                       method = c("spearman", "kendall", "quadrant", "M", "MCD", "pearson"), 
-                       control = list(...), useL1Median = TRUE, 
-                       fallback = FALSE, ...) {
-  ## initializations
-  matchedCall <- match.call()
-  ## define list of control arguments for algorithm
-  ppControl <- list(useL1Median=isTRUE(useL1Median))
-  ## call workhorse function
-  maxCor <- maxCorPP(x, y, method=method, corControl=control, algorithm="proj", 
-                     ppControl=ppControl, fallback=fallback)
-  maxCor$call <- matchedCall
-  maxCor
+        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+        control = list(...), useL1Median = TRUE, fallback = FALSE, ...) {
+    ## initializations
+    matchedCall <- match.call()
+    ## define list of control arguments for algorithm
+    ppControl <- list(useL1Median=isTRUE(useL1Median))
+    ## call workhorse function
+    maxCor <- maxCorPP(x, y, method=method, corControl=control, 
+        algorithm="proj", ppControl=ppControl, fallback=fallback)
+    maxCor$call <- matchedCall
+    maxCor
 }
 
 
 ## workhorse function
 maxCorPP <- function(x, y, ...) {
-  ## call workhorse function for canonical correlation analysis
-  maxCor <- ccaPP(x, y, forceConsistency=FALSE, ...)
-  ## modify object and return results
-  maxCor <- list(cor=maxCor$cor, a=drop(maxCor$A), b=drop(maxCor$B))
-  class(maxCor) <- "maxCor"
-  maxCor
+    ## call workhorse function for canonical correlation analysis
+    maxCor <- ccaPP(x, y, forceConsistency=FALSE, ...)
+    ## modify object and return results
+    maxCor <- list(cor=maxCor$cor, a=drop(maxCor$A), b=drop(maxCor$B))
+    class(maxCor) <- "maxCor"
+    maxCor
 }

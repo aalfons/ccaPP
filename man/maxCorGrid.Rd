@@ -4,7 +4,7 @@
 \title{(Robust) maximum correlation via alternating series of grid searches}
 \usage{
   maxCorGrid(x, y,
-    method = c("spearman", "kendall", "quadrant", "M", "MCD", "pearson"),
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
     nGrid = 25, select = NULL, tol = 1e-06,
     fallback = FALSE, seed = NULL, ...)

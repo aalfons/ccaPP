@@ -3,7 +3,7 @@
 \title{(Robust) maximum correlation via projections through the data points}
 \usage{
   maxCorProj(x, y,
-    method = c("spearman", "kendall", "quadrant", "M", "MCD", "pearson"),
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), useL1Median = TRUE,
     fallback = FALSE, ...)
 }

@@ -4,12 +4,12 @@
 \title{(Robust) CCA via projections through the data points}
 \usage{
   ccaProj(x, y, k = 1,
-    method = c("spearman", "kendall", "quadrant", "M", "MCD", "pearson"),
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), useL1Median = TRUE,
     fallback = FALSE, ...)
 
   CCAproj(x, y, k = 1,
-    method = c("spearman", "kendall", "quadrant", "M", "MCD", "pearson"),
+    method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     useL1Median = TRUE, fallback = FALSE, ...)
 }
 \arguments{

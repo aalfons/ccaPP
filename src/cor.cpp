@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         Erasmus University Rotterdam
+ *         KU Leuven
  */
 
 #include <R.h>
@@ -19,6 +19,27 @@ using namespace std;
 // -------------------
 
 // barebones arma version of the Pearson correlation
+//double corPearson(const vec& x, const vec& y) {
+//	const uword n = x.n_elem;
+//	// compute means
+//	double meanX = 0, meanY = 0;
+//	for(uword i = 0; i < n; i++) {
+//		meanX += x(i);
+//		meanY += y(i);
+//	}
+//	meanX /= n;
+//	meanY /= n;
+//	// compute Pearson correlation
+//	// covariance and variances are computed up to scaling factor (n-1)
+//	double covXY = 0, varX = 0, varY = 0;
+//	for(uword i = 0; i < n; i++) {
+//		double tmpX = x(i) - meanX, tmpY = y(i) - meanY;  // centered values
+//		covXY += tmpX * tmpY;
+//		varX += tmpX * tmpX;
+//		varY += tmpY * tmpY;
+//	}
+//	return covXY / (sqrt(varX) * sqrt(varY));
+//}
 double corPearson(const vec& x, const vec& y) {
 	mat corXY = cor(x, y);	// arma function cor() always returns matrix
 	return corXY(0, 0);
@@ -309,32 +330,3 @@ SEXP R_corM(SEXP R_x, SEXP R_y, SEXP R_prob, SEXP R_initial, SEXP R_tol) {
 	// call arma version and wrap result
 	return wrap(corM(x, y, prob, initial, tol));
 }
-
-
-// -------------
-// MCD-estimator
-// -------------
-
-// call R function for MCD estimator
-double corMCD(const vec& x, const vec& y, const double& alpha) {
-	// TODO: call underlying C++ code directly
-	Environment ccaPP("package:ccaPP");
-	Function tmp = ccaPP["corMCD"];
-  NumericVector Rcpp_x = wrap(x);           // does this reuse memory?
-  NumericVector Rcpp_y = wrap(y);           // does this reuse memory?
-  NumericVector Rcpp_alpha = wrap(alpha);   // does this reuse memory?
-	NumericVector Rcpp_r = tmp(Rcpp_x, Rcpp_y, Rcpp_alpha); // call R function
-	double r = as<double>(Rcpp_r);
-	return r;
-}
-
-//// R interface to corMCD() (for testing)
-//SEXP R_corMcd(SEXP R_x, SEXP R_y, SEXP R_alpha) {
-//  NumericVector Rcpp_x(R_x);                    // convert data to Rcpp type
-//  vec x(Rcpp_x.begin(), Rcpp_x.size(), false);  // reuse memory
-//  NumericVector Rcpp_y(R_y);                    // convert data to Rcpp type
-//  vec y(Rcpp_y.begin(), Rcpp_y.size(), false);  // reuse memory
-//	double alpha = as<double>(R_alpha);
-//  double r = corMCD(x, y, alpha); // call arma version
-//	return wrap(r);
-//}
