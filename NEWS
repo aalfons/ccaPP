@@ -1,6 +1,7 @@
 Changes in ccaPP version 0.3.0
 
-    + Added R implementation of CCA based on the bivariate MCD estimator.
+    + Added R implementation of robust CCA via alternating series of grid 
+      searches based on the bivariate MCD-estimator.
 
 
 

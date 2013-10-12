@@ -5,11 +5,11 @@ Version: 0.3.0
 Date: 2013-10-08
 Depends:
     Rcpp (>= 0.9.10),
-    parallel,
+    parallel
+Imports:
+    RcppArmadillo (>= 0.2.36),
     pcaPP (>= 1.8-1),
     robustbase
-Imports:
-    RcppArmadillo (>= 0.2.36)
 LinkingTo: Rcpp, RcppArmadillo
 Suggests:
     mvtnorm

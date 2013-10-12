@@ -3,48 +3,253 @@
 #         Erasmus University Rotterdam
 # ------------------------------------
 
-## correlation based on bivariate MCD-estimator
+#' Robust correlation based on the bivariate MCD-estimator
+#' 
+#' Estimate the correlation of two vectors based on the bivariate MCD-estimator 
+#' of location and scatter.
+#' 
+#' @param x,y  numeric vectors.
+#' @param alpha  a numeric value controlling the percentage of observations 
+#' over which the determinant is minimized.  Allowed values are between 0.5 
+#' and 1 and the default is 0.5.
+#' @param seed  optional initial seed for the random number generator (see 
+#' \code{\link{.Random.seed}}).
+#' 
+#' @return The correlation estimate.
+#' 
+#' @note This is a simple wrapper function calling 
+#' \code{\link[robustbase]{covMcd}} from package \pkg{robustbase}.
+#' 
+#' @author Andreas Alfons
+#' 
+#' @seealso \code{\link{ccaMCD}}, \code{\link[robustbase]{covMcd}}
+#' 
+#' @examples 
+#' ## generate data
+#' library("mvtnorm")
+#' set.seed(1234)  # for reproducibility
+#' sigma <- matrix(c(1, 0.6, 0.6, 1), 2, 2)
+#' xy <- rmvnorm(100, sigma=sigma)
+#' x <- xy[, 1]
+#' y <- xy[, 2]
+#' 
+#' ## compute correlation
+#' corMCD(x, y, alpha = 0.75)
+#' 
+#' @keywords multivariate robust
+#' 
 #' @export
 #' @import robustbase
+
 corMCD <- function(x, y, alpha = 0.5, seed = NULL) {
-  covMcd(cbind(x, y), cor=TRUE, alpha=alpha, seed=seed)$cor[1, 2]
+  xy <- cbind(as.numeric(x), as.numeric(y))
+  covMcd(xy, cor=TRUE, alpha=alpha, seed=seed)$cor[1, 2]
 }
 
-## maximum correlation based on bivariate MCD-estimator
+
+#' Robust maximum correlation via alternating series of grid searches based on 
+#' the bivariate MCD
+#' 
+#' Compute the maximum correlation between two data sets via projection pursuit 
+#' based on alternating series of grid searches in two-dimensional subspaces of 
+#' each data set.  The correlations in those subspaces are computed with the 
+#' bivariate MCD-estimator.
+#' 
+#' The algorithm is based on alternating series of grid searches in 
+#' two-dimensional subspaces of each data set.  In each grid search, 
+#' \code{nGrid} grid points on the unit circle in the corresponding plane are 
+#' obtained, and the directions from the center to each of the grid points are 
+#' examined.  In the first iteration, equispaced grid points in the interval 
+#' \eqn{[-\pi/2, \pi/2)}{[-pi/2, pi/2)} are used.  In each subsequent 
+#' iteration, the angles are halved such that the interval 
+#' \eqn{[-\pi/4, \pi/4)}{[-pi/4, pi/4)} is used in the second iteration and so 
+#' on.  If only one data set is multivariate, the algorithm simplifies 
+#' to iterative grid searches in two-dimensional subspaces of the corresponding 
+#' data set.
+#' 
+#' The order of the variables in a series of grid searches for each of the data 
+#' sets is determined by the average absolute correlations with the variables 
+#' of the respective other data set.  This requires to compute the full 
+#' \eqn{(p \times q)}{(p x q)} matrix of absolute correlations, where \eqn{p} 
+#' denotes the number of variables of \code{x} and \eqn{q} the number of 
+#' variables of \code{y}.
+#' 
+#' @param x,y  each can be a numeric vector, matrix or data frame.
+#' @param alpha  a numeric value controlling the percentage of observations 
+#' over which the determinant is minimized.  Allowed values are between 0.5 
+#' and 1 and the default is 0.5.
+#' @param nIterations  an integer giving the maximum number of iterations.
+#' @param nAlternate  an integer giving the maximum number of alternate series 
+#' of grid searches in each iteration.
+#' @param nGrid  an integer giving the number of equally spaced grid points on 
+#' the unit circle to use in each grid search.
+#' @param tol  a small positive numeric value to be used for determining 
+#' convergence.
+#' @param fallback  logical; the data are first robustly standardized via 
+#' median and MAD.  This indicates whether standardization via mean and 
+#' standard deviation should be performed as a fallback mode for variables 
+#' whose MAD is zero (e.g., for dummy variables).
+#' 
+#' @returnClass maxCor
+#' @returnItem cor  a numeric giving the maximum correlation estimate.
+#' @returnItem a  numeric; the weighting vector for \code{x}.
+#' @returnItem b  numeric; the weighting vector for \code{y}.
+#' @returnItem call  the matched function call.
+#' 
+#' @note Unlike \code{\link{maxCorGrid}}, \code{maxCorMCD} is a pure \R 
+#' implementation of the alternate grid algorithm.  For this reason, but mostly 
+#' due to the computational cost of the MCD algorithm, \code{maxCorMCD} is much 
+#' slower than \code{\link{maxCorGrid}}.
+#' 
+#' @author Andreas Alfons
+#' 
+#' @seealso \code{\link{maxCorGrid}}, \code{\link{ccaMCD}}, \code{\link{corMCD}}
+#' 
+#' @examples 
+#' ## generate data
+#' library("mvtnorm")
+#' set.seed(1234)  # for reproducibility
+#' p <- 3
+#' q <- 2
+#' m <- p + q
+#' sigma <- 0.5^t(sapply(1:m, function(i, j) abs(i-j), 1:m))
+#' xy <- rmvnorm(100, sigma=sigma)
+#' x <- xy[, 1:p]
+#' y <- xy[, (p+1):m]
+#' 
+#' ## maximum correlation
+#' maxCorMCD(x, y, alpha = 0.75)
+#' 
+#' @keywords multivariate robust
+#' 
 #' @export
+
 maxCorMCD <- function(x, y, alpha = 0.5, nIterations = 10, 
-                      nAlternate = 10, nGrid = 25, tol = 1e-06) {
+                      nAlternate = 10, nGrid = 25, tol = 1e-06, 
+                      standardize = TRUE, fallback = FALSE) {
   ## initializations
   matchedCall <- match.call()
   x <- as.matrix(x)
   y <- as.matrix(y)
+  standardize <- isTRUE(standardize)
+  fallback <- isTRUE(fallback)
   ## check control arguments for PP algorithm
-  alpha <- as.numeric(alpha)
   nIterations <- as.integer(nIterations)
   nAlternate <- as.integer(nAlternate)
   nGrid <- as.integer(nGrid)
   tol <- as.numeric(tol)
+  ## check control arguments for correlation based on bivariate MCD-estimator
+  alpha <- as.numeric(alpha)
+  if(!exists(".Random.seed", envir=.GlobalEnv, inherits=FALSE)) runif(1)
   seed <- .Random.seed
   on.exit(set.seed(seed))  # reset seed of the random number generator
-  ## robustly standardize data
-  xs <- standardize(x, robust=TRUE)
-  ys <- standardize(y, robust=TRUE)
-  scaleX <- attr(xs, "scale")
-  scaleY <- attr(ys, "scale")
-  ## return results
-  maxCor <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
-                        nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
-                        seed=seed)
-  maxCor <- list(cor=maxCor$maxCor, a=backtransform(maxCor$a, scaleX), 
-                 b=backtransform(maxCor$b, scaleY), call=matchedCall)
+  ## robustly standardize data if requested
+  if(standardize) {
+    xs <- robStandardize(x, fallback=fallback)
+    ys <- robStandardize(y, fallback=fallback)
+    scaleX <- attr(xs, "scale")
+    scaleY <- attr(ys, "scale")
+    ## return results
+    maxCor <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
+                          nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                          seed=seed)
+    maxCor <- list(cor=maxCor$cor, a=backtransform(maxCor$a, scaleX), 
+                   b=backtransform(maxCor$b, scaleY))
+  } else {
+    maxCor <- maxCorPPMCD(x, y, alpha=alpha, nIterations=nIterations, 
+                          nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                          seed=seed)
+  }
+  ## return maximum correlation
+  maxCor$call <- matchedCall
   class(maxCor) <- "maxCor"
   maxCor
 }
 
-## canonical correlation analysis based on bivariate MCD-estimator
+
+#' Robust CCA via alternating series of grid searches based on the bivariate MCD
+#' 
+#' Perform robust canoncial correlation analysis via projection pursuit based 
+#' on alternating series of grid searches in two-dimensional subspaces of each 
+#' data set.  The correlations in those subspaces are computed with the 
+#' bivariate MCD-estimator.
+#' 
+#' The algorithm is based on alternating series of grid searches in 
+#' two-dimensional subspaces of each data set.  In each grid search, 
+#' \code{nGrid} grid points on the unit circle in the corresponding plane are 
+#' obtained, and the directions from the center to each of the grid points are 
+#' examined.  In the first iteration, equispaced grid points in the interval 
+#' \eqn{[-\pi/2, \pi/2)}{[-pi/2, pi/2)} are used.  In each subsequent 
+#' iteration, the angles are halved such that the interval 
+#' \eqn{[-\pi/4, \pi/4)}{[-pi/4, pi/4)} is used in the second iteration and so 
+#' on.  If only one data set is multivariate, the algorithm simplifies 
+#' to iterative grid searches in two-dimensional subspaces of the corresponding 
+#' data set.
+#' 
+#' The order of the variables in a series of grid searches for each of the data 
+#' sets is determined by the average absolute correlations with the variables 
+#' of the respective other data set.  This requires to compute the full 
+#' \eqn{(p \times q)}{(p x q)} matrix of absolute correlations, where \eqn{p} 
+#' denotes the number of variables of \code{x} and \eqn{q} the number of 
+#' variables of \code{y}.
+#' 
+#' @param x,y  each can be a numeric vector, matrix or data frame.
+#' @param k  an integer giving the number of canonical variables to compute.
+#' @param alpha  a numeric value controlling the percentage of observations 
+#' over which the determinant is minimized.  Allowed values are between 0.5 
+#' and 1 and the default is 0.5.
+#' @param nIterations  an integer giving the maximum number of iterations.
+#' @param nAlternate  an integer giving the maximum number of alternate series 
+#' of grid searches in each iteration.
+#' @param nGrid  an integer giving the number of equally spaced grid points on 
+#' the unit circle to use in each grid search.
+#' @param tol  a small positive numeric value to be used for determining 
+#' convergence.
+#' @param fallback  logical; the data are first robustly standardized via 
+#' median and MAD.  This indicates whether standardization via mean and 
+#' standard deviation should be performed as a fallback mode for variables 
+#' whose MAD is zero (e.g., for dummy variables).
+#' 
+#' @returnClass cca
+#' @returnItem cor  a numeric vector giving the canonical correlation 
+#' measures.
+#' @returnItem A  a numeric matrix in which the columns contain the canonical 
+#' vectors for \code{x}.
+#' @returnItem B  a numeric matrix in which the columns contain the canonical 
+#' vectors for \code{y}.
+#' @returnItem call  the matched function call.
+#' 
+#' @note Unlike \code{\link{ccaGrid}}, \code{ccaMCD} is a pure \R implementation 
+#' of the alternate grid algorithm.  For this reason, but mostly due to the 
+#' computational cost of the MCD algorithm, \code{ccaMCD} is much slower than 
+#' \code{\link{ccaGrid}}.
+#' 
+#' @author Andreas Alfons
+#' 
+#' @seealso \code{\link{ccaGrid}}, \code{\link{maxCorMCD}}, \code{\link{corMCD}}
+#' 
+#' @examples 
+#' ## generate data
+#' library("mvtnorm")
+#' set.seed(1234)  # for reproducibility
+#' p <- 3
+#' q <- 2
+#' m <- p + q
+#' sigma <- 0.5^t(sapply(1:m, function(i, j) abs(i-j), 1:m))
+#' xy <- rmvnorm(100, sigma=sigma)
+#' x <- xy[, 1:p]
+#' y <- xy[, (p+1):m]
+#' 
+#' ## robust CCA
+#' ccaMCD(x, y, alpha = 0.75)
+#' 
+#' @keywords multivariate robust
+#' 
 #' @export
+
 ccaMCD <- function(x, y, k = 1, alpha = 0.5, nIterations = 10, 
-                   nAlternate = 10, nGrid = 25, tol = 1e-06) {
+                   nAlternate = 10, nGrid = 25, tol = 1e-06, 
+                   standardize = TRUE, fallback = FALSE) {
   ## initializations
   matchedCall <- match.call()
   x <- as.matrix(x)
@@ -52,31 +257,45 @@ ccaMCD <- function(x, y, k = 1, alpha = 0.5, nIterations = 10,
   p <- ncol(x)
   q <- ncol(y)
   k <- as.integer(k)
+  standardize <- isTRUE(standardize)
+  fallback <- isTRUE(fallback)
   ## check control arguments for PP algorithm
-  alpha <- as.numeric(alpha)
   nIterations <- as.integer(nIterations)
   nAlternate <- as.integer(nAlternate)
   nGrid <- as.integer(nGrid)
   tol <- as.numeric(tol)
+  ## check control arguments for correlation based on bivariate MCD-estimator
+  alpha <- as.numeric(alpha)
+  if(!exists(".Random.seed", envir=.GlobalEnv, inherits=FALSE)) runif(1)
   seed <- .Random.seed
   on.exit(set.seed(seed))  # reset seed of the random number generator
-  ## robustly standardize data
-  xs <- standardize(x, robust=TRUE)
-  ys <- standardize(y, robust=TRUE)
-  scaleX <- attr(xs, "scale")
-  scaleY <- attr(ys, "scale")
   ## initialize results
   r <- numeric(k)
   A <- matrix(0, p, k)
   B <- matrix(0, q, k)
-  ## compute first canonical correlation variables with standardized data
-  ## and transform canonical vectors back to original scale
-  tmp <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
-                     nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
-                     seed=seed)
-  r[1] <- tmp$maxCor
-  a <- backtransform(tmp$a, scaleX)
-  b <- backtransform(tmp$b, scaleY)
+  ## robustly standardize data if requested
+  if(standardize) {
+    xs <- robStandardize(x, fallback=fallback)
+    ys <- robStandardize(y, fallback=fallback)
+    scaleX <- attr(xs, "scale")
+    scaleY <- attr(ys, "scale")
+    # compute first canonical correlation variables with standardized data
+    # and transform canonical vectors back to original scale
+    tmp <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
+                       nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                       seed=seed)
+    a <- backtransform(tmp$a, scaleX)
+    b <- backtransform(tmp$b, scaleY)
+  } else {
+    # compute first canonical correlation variables with original data
+    tmp <- maxCorPPMCD(x, y, alpha=alpha, nIterations=nIterations, 
+                       nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                       seed=seed)
+    a <- tmp$a
+    b <- tmp$b
+  }
+  ## store first canonical variables
+  r[1] <- tmp$cor
   A[, 1] <- a
   B[, 1] <- b
   ## compute remaining canonical correlations
@@ -89,20 +308,30 @@ ccaMCD <- function(x, y, k = 1, alpha = 0.5, nIterations = 10,
       Ql <- householder(b)
       xl <- (xl %*% Pl)[, -1, drop=FALSE]  # reduced x data
       yl <- (yl %*% Ql)[, -1, drop=FALSE]  # reduced y data
-      # standardize transformed data
-      xs <- standardize(xl, robust=TRUE)
-      ys <- standardize(yl, robust=TRUE)
-      scaleX <- attr(xs, "scale")
-      scaleY <- attr(ys, "scale")
-      # compute the canonical correlation and canonical vectors for the
-      # standardized reduced data sets and transform the canonical
-      # vectors back to the original scale
-      tmp <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
-                         nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
-                         seed=seed)
-      r[l] <- tmp$maxCor
-      a <- backtransform(tmp$a, scaleX)
-      b <- backtransform(tmp$b, scaleY)
+      # standardize transformed data if requested
+      if(standardize) {
+        xs <- robStandardize(xl, fallback=fallback)
+        ys <- robStandardize(yl, fallback=fallback)
+        scaleX <- attr(xs, "scale")
+        scaleY <- attr(ys, "scale")
+        # compute the canonical correlation and canonical vectors for the
+        # standardized reduced data sets and transform the canonical
+        # vectors back to the original scale
+        tmp <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
+                           nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                           seed=seed)
+        a <- backtransform(tmp$a, scaleX)
+        b <- backtransform(tmp$b, scaleY)
+      } else {
+        # compute canonical correlation and canonical vectors for reduced data
+        tmp <- maxCorPPMCD(xl, yl, alpha=alpha, nIterations=nIterations, 
+                           nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                           seed=seed)
+        a <- tmp$a
+        b <- tmp$b
+      }
+      # extract canonical correlation
+      r[l] <- tmp$cor
       # transform canonical vectors back to original space
       if(l == 2) {
         P <- Pl
@@ -262,7 +491,7 @@ maxCorPPMCD <- function(x, y, alpha = 0.5, nIterations = 10,
     else b <- -b
   }
   # return maximum correlation
-  list(maxCor=maxCor, a=a, b=b)
+  list(cor=maxCor, a=a, b=b)
 }
 
 
@@ -289,6 +518,34 @@ standardize <- function(x, robust = TRUE) {
   attr(x, "center") <- center
   attr(x, "scale") <- scale
   x
+}
+
+# robustly standardize the data with fallback option
+robStandardize <- function(x, fallback = FALSE) {
+  # robustly standardize data
+  xs <- standardize(x, robust=TRUE)
+  # if requested, check if some variables have a robust scale of zero and 
+  # use standardization with mean/sd as fallback mode
+  if(fallback) {
+    scale <- attr(xs, "scale")
+    if(ncol(x) == 1) {
+      if(scale == 0) xs <- standardize(x)
+    } else {
+      isZero <- which(scale == 0)
+      if(length(isZero) > 0) {
+        # standardize with mean and standard deviation
+        center <- attr(xs, "center")
+        xcs <- standardize(x[, isZero])
+        center[isZero] <- attr(xcs, "center")
+        scale[isZero] <- attr(xcs, "scale")
+        xs[, isZero] <- xcs
+        attr(xs, "center") <- center
+        attr(xs, "scale") <- scale
+      }
+    }
+  }
+  # return standardized data
+  xs
 }
 
 # get the order in which to update the elements of a weighting vector

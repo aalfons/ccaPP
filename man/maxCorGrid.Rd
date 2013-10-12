@@ -146,7 +146,7 @@ maxCorGrid(x, y, method = "pearson")
 }
 \seealso{
   \code{\link{maxCorProj}}, \code{\link{ccaGrid}},
-  \code{\link{corFunctions}},
+  \code{\link{corFunctions}}
 }
 \keyword{multivariate}
 \keyword{robust}

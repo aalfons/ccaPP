@@ -84,7 +84,7 @@
 #' @author Andreas Alfons
 #' 
 #' @seealso \code{\link{maxCorProj}}, \code{\link{ccaGrid}}, 
-#' \code{\link{corFunctions}}, 
+#' \code{\link{corFunctions}}
 #' 
 #' @examples 
 #' ## generate data
