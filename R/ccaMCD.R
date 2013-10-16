@@ -256,7 +256,11 @@ ccaMCD <- function(x, y, k = 1, alpha = 0.5, nIterations = 10,
   y <- as.matrix(y)
   p <- ncol(x)
   q <- ncol(y)
-  k <- as.integer(k)
+  ## check number of canonical variables to compute
+  k <- rep(as.integer(k), length.out=1)
+  if(is.na(k) || k < 0) k <- formals()$k
+  k <- min(k, p, q)
+  ## check arguments for standardization
   standardize <- isTRUE(standardize)
   fallback <- isTRUE(fallback)
   ## check control arguments for PP algorithm
@@ -280,56 +284,38 @@ ccaMCD <- function(x, y, k = 1, alpha = 0.5, nIterations = 10,
     scaleX <- attr(xs, "scale")
     scaleY <- attr(ys, "scale")
     # compute first canonical correlation variables with standardized data
-    # and transform canonical vectors back to original scale
     tmp <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
                        nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
                        seed=seed)
-    a <- backtransform(tmp$a, scaleX)
-    b <- backtransform(tmp$b, scaleY)
   } else {
     # compute first canonical correlation variables with original data
     tmp <- maxCorPPMCD(x, y, alpha=alpha, nIterations=nIterations, 
                        nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
                        seed=seed)
-    a <- tmp$a
-    b <- tmp$b
   }
   ## store first canonical variables
   r[1] <- tmp$cor
-  A[, 1] <- a
-  B[, 1] <- b
+  A[, 1] <- tmp$a
+  B[, 1] <- tmp$b
   ## compute remaining canonical correlations
   if(k > 1) {
-    xl <- x
-    yl <- y
+    if(standardize) {
+      xl <- xs
+      yl <- ys
+    } else {
+      xl <- x
+      yl <- y
+    }
     for(l in 2:k) {
       # perform Householder transformation
-      Pl <- householder(a)
-      Ql <- householder(b)
+      Pl <- householder(tmp$a)
+      Ql <- householder(tmp$b)
       xl <- (xl %*% Pl)[, -1, drop=FALSE]  # reduced x data
       yl <- (yl %*% Ql)[, -1, drop=FALSE]  # reduced y data
-      # standardize transformed data if requested
-      if(standardize) {
-        xs <- robStandardize(xl, fallback=fallback)
-        ys <- robStandardize(yl, fallback=fallback)
-        scaleX <- attr(xs, "scale")
-        scaleY <- attr(ys, "scale")
-        # compute the canonical correlation and canonical vectors for the
-        # standardized reduced data sets and transform the canonical
-        # vectors back to the original scale
-        tmp <- maxCorPPMCD(xs, ys, alpha=alpha, nIterations=nIterations, 
-                           nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
-                           seed=seed)
-        a <- backtransform(tmp$a, scaleX)
-        b <- backtransform(tmp$b, scaleY)
-      } else {
-        # compute canonical correlation and canonical vectors for reduced data
-        tmp <- maxCorPPMCD(xl, yl, alpha=alpha, nIterations=nIterations, 
-                           nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
-                           seed=seed)
-        a <- tmp$a
-        b <- tmp$b
-      }
+      # compute canonical correlation and canonical vectors for reduced data
+      tmp <- maxCorPPMCD(xl, yl, alpha=alpha, nIterations=nIterations, 
+                         nAlternate=nAlternate, nGrid=nGrid, tol=tol, 
+                         seed=seed)
       # extract canonical correlation
       r[l] <- tmp$cor
       # transform canonical vectors back to original space
@@ -350,9 +336,14 @@ ccaMCD <- function(x, y, k = 1, alpha = 0.5, nIterations = 10,
       }
       # expand canonical vectors and premultiply with product of
       # corresponding Householder matrices
-      A[, l] <- P %*% c(rep.int(0, l-1), a)
-      B[, l] <- Q %*% c(rep.int(0, l-1), b)
+      A[, l] <- P %*% c(rep.int(0, l-1), tmp$a)
+      B[, l] <- Q %*% c(rep.int(0, l-1), tmp$b)
     }
+  }
+  ## back-transform canonical vectors in case of standardization
+  if(standardize) {
+    if(p > 1) A <- apply(A, 2, backtransform, scaleX)
+    if(q > 1) B <- apply(B, 2, backtransform, scaleY)
   }
   ## return results
   cca <- list(cor=r, A=A, B=B, call=matchedCall)
