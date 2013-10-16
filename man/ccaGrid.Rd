@@ -8,13 +8,13 @@
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
     nGrid = 25, select = NULL, tol = 1e-06,
-    fallback = FALSE, seed = NULL, ...)
+    standardize = TRUE, fallback = FALSE, seed = NULL, ...)
 
   CCAgrid(x, y, k = 1,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     maxiter = 10, maxalter = 10, splitcircle = 25,
-    select = NULL, zero.tol = 1e-06, fallback = FALSE,
-    seed = NULL, ...)
+    select = NULL, zero.tol = 1e-06, standardize = TRUE,
+    fallback = FALSE, seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -64,15 +64,18 @@
   \item{tol,zero.tol}{a small positive numeric value to be
   used for determining convergence.}
 
-  \item{fallback}{logical; if a correlation functional
-  other than the Pearson correlation is maximized, the data
-  are first robustly standardized via median and MAD.  This
-  indicates whether standardization via mean and standard
-  deviation should be performed as a fallback mode for
-  variables whose MAD is zero (e.g., for dummy variables).
-  Note that if the Pearson correlation is maximized, the
-  data are always standardized via mean and standard
-  deviation.}
+  \item{standardize}{a logical indicating whether the data
+  should be (robustly) standardized.}
+
+  \item{fallback}{logical indicating whether a fallback
+  mode for robust standardization should be used.  If a
+  correlation functional other than the Pearson correlation
+  is maximized, the first attempt for standardizing the
+  data is via median and MAD.  In the fallback mode,
+  variables whose MADs are zero (e.g., dummy variables) are
+  standardized via mean and standard deviation.  Note that
+  if the Pearson correlation is maximized, standardization
+  is always done via mean and standard deviation.}
 
   \item{seed}{optional initial seed for the random number
   generator (see \code{\link{.Random.seed}}).  This is only
@@ -137,6 +140,12 @@
   thereby possible to use randomly selected subsets of
   variables, or to specify the subsets of variables
   directly.
+
+  For higher order canonical correlations, a Householder
+  transformation is first applied to transform the data to
+  an orthogonal subspace.  Then the alternate grid
+  algorithm is applied in this orthogonal subspace and the
+  results are back-transformed to the original space.
 }
 \note{
   \code{CCAgrid} is a simple wrapper function for
