@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         KU Leuven
+ *         Erasmus University Rotterdam
  */
 
 #include <R.h>
@@ -13,6 +13,24 @@ using namespace std;
 
 // C++ isnan() is not portable and gives error on Windows systems
 // use R macro ISNAN() instead
+
+
+// -------------
+// MCD-estimator
+// -------------
+
+// MCD-estimator
+mat covMCD(const mat& x) {
+  // call R function from package robustbase
+  Environment robustbase("package:robustbase");
+	Function covMcd = robustbase["covMcd"];
+  NumericMatrix Rcpp_x = wrap(x);             // does this reuse memory?
+	List Rcpp_MCD = covMcd(Rcpp_x);             // call R function
+  NumericMatrix Rcpp_Sigma = Rcpp_MCD["cov"]; // extract covariance matrix
+	mat Sigma(Rcpp_Sigma.begin(), Rcpp_Sigma.nrow(), Rcpp_Sigma.ncol(), false); // reuse memory
+	return Sigma;
+}
+
 
 // --------------
 // median and MAD

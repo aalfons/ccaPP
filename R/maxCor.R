@@ -1,7 +1,7 @@
-# ----------------------
+# ------------------------------------
 # Author: Andreas Alfons
-#         KU Leuven
-# ----------------------
+#         Erasmus University Rotterdam
+# ------------------------------------
 
 #' (Robust) maximum correlation via alternating series of grid searches
 #' 
@@ -81,6 +81,14 @@
 #' @returnItem cor  a numeric giving the maximum correlation estimate.
 #' @returnItem a  numeric; the weighting vector for \code{x}.
 #' @returnItem b  numeric; the weighting vector for \code{y}.
+#' @returnItem centerX  a numeric vector giving the center estimates used in 
+#' standardization of \code{x}.
+#' @returnItem centerY  a numeric vector giving the center estimates used in 
+#' standardization of \code{y}.
+#' @returnItem scaleX  a numeric vector giving the scale estimates used in 
+#' standardization of \code{x}.
+#' @returnItem scaleY  a numeric vector giving the scale estimates used in 
+#' standardization of \code{y}.
 #' @returnItem call  the matched function call.
 #' 
 #' @author Andreas Alfons
@@ -182,6 +190,14 @@ maxCorGrid <- function(x, y,
 #' @returnItem cor  a numeric giving the maximum correlation estimate.
 #' @returnItem a  numeric; the weighting vector for \code{x}.
 #' @returnItem b  numeric; the weighting vector for \code{y}.
+#' @returnItem centerX  a numeric vector giving the center estimates used in 
+#' standardization of \code{x}.
+#' @returnItem centerY  a numeric vector giving the center estimates used in 
+#' standardization of \code{y}.
+#' @returnItem scaleX  a numeric vector giving the scale estimates used in 
+#' standardization of \code{x}.
+#' @returnItem scaleY  a numeric vector giving the scale estimates used in 
+#' standardization of \code{y}.
 #' @returnItem call  the matched function call.
 #' 
 #' @author Andreas Alfons
@@ -238,7 +254,9 @@ maxCorPP <- function(x, y, ...) {
   ## call workhorse function for canonical correlation analysis
   maxCor <- ccaPP(x, y, forceConsistency=FALSE, ...)
   ## modify object and return results
-  maxCor <- list(cor=maxCor$cor, a=drop(maxCor$A), b=drop(maxCor$B))
+  maxCor <- list(cor=maxCor$cor, a=drop(maxCor$A), b=drop(maxCor$B), 
+                 centerX=maxCor$centerX, centerY=maxCor$centerY, 
+                 scaleX=maxCor$scaleX, scaleY=maxCor$scaleY)
   class(maxCor) <- "maxCor"
   maxCor
 }

@@ -1,7 +1,7 @@
-# ----------------------
+# ------------------------------------
 # Author: Andreas Alfons
-#         KU Leuven
-# ----------------------
+#         Erasmus University Rotterdam
+# ------------------------------------
 
 #' (Robust) CCA via alternating series of grid searches
 #' 
@@ -93,6 +93,14 @@
 #' vectors for \code{x}.
 #' @returnItem B  a numeric matrix in which the columns contain the canonical 
 #' vectors for \code{y}.
+#' @returnItem centerX  a numeric vector giving the center estimates used in 
+#' standardization of \code{x}.
+#' @returnItem centerY  a numeric vector giving the center estimates used in 
+#' standardization of \code{y}.
+#' @returnItem scaleX  a numeric vector giving the scale estimates used in 
+#' standardization of \code{x}.
+#' @returnItem scaleY  a numeric vector giving the scale estimates used in 
+#' standardization of \code{y}.
 #' @returnItem call  the matched function call.
 #' 
 #' @note \code{CCAgrid} is a simple wrapper function for \code{ccaGrid} for 
@@ -226,6 +234,14 @@ CCAgrid <- function(x, y, k = 1,
 #' vectors for \code{x}.
 #' @returnItem B  a numeric matrix in which the columns contain the canonical 
 #' vectors for \code{y}.
+#' @returnItem centerX  a numeric vector giving the center estimates used in 
+#' standardization of \code{x}.
+#' @returnItem centerY  a numeric vector giving the center estimates used in 
+#' standardization of \code{y}.
+#' @returnItem scaleX  a numeric vector giving the scale estimates used in 
+#' standardization of \code{x}.
+#' @returnItem scaleY  a numeric vector giving the scale estimates used in 
+#' standardization of \code{y}.
 #' @returnItem call  the matched function call.
 #' 
 #' @note \code{CCAproj} is a simple wrapper function for \code{ccaProj} for 
@@ -365,7 +381,8 @@ ccaPP <- function(x, y, k = 1,
                  R_corControl=corControl, R_algorithm=algorithm, 
                  R_ppControl=ppControl, R_standardize=isTRUE(standardize), 
                  R_fallback=isTRUE(fallback), PACKAGE="ccaPP")
-    cca$cor <- drop(cca$cor)
+    drop <- c("cor", "centerX", "centerY", "scaleX", "scaleY")
+    cca[drop] <- lapply(cca[drop], drop)
   }
   ## assign class and return results
   class(cca) <- "cca"

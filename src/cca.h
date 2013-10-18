@@ -1,6 +1,6 @@
 /*
  * Author: Andreas Alfons
- *         KU Leuven
+ *         Erasmus University Rotterdam
  */
 
 #ifndef _ccaPP_CCA_H

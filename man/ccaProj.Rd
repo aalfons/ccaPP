@@ -74,6 +74,18 @@
   \item{B}{a numeric matrix in which the columns contain
   the canonical vectors for \code{y}.}
 
+  \item{centerX}{a numeric vector giving the center
+  estimates used in standardization of \code{x}.}
+
+  \item{centerY}{a numeric vector giving the center
+  estimates used in standardization of \code{y}.}
+
+  \item{scaleX}{a numeric vector giving the scale estimates
+  used in standardization of \code{x}.}
+
+  \item{scaleY}{a numeric vector giving the scale estimates
+  used in standardization of \code{y}.}
+
   \item{call}{the matched function call.}
 }
 \description{
