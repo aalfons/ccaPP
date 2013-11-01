@@ -1,4 +1,4 @@
-Changes in ccaPP version 0.2.1
+Changes in ccaPP version 0.3.0
 
     + Standardization in functions for CCA and maximum correlation is now 
       optional.
@@ -20,6 +20,7 @@ Changes in ccaPP version 0.2.1
     
     + Renamed internal C++ function rank() to fix error with clang++ under 
       OS X Mavericks.
+
 
 
 Changes in ccaPP version 0.2.0
