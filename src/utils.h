@@ -28,6 +28,6 @@ double mad(const vec& x, double& center);
 double mad(const vec& x, const double& constant, double& center);
 uvec order(const vec& x, const bool& decreasing);
 uvec order(const vec& x);
-vec rank(const vec& x);
+vec rank_ccaPP(const vec& x);
 
 #endif

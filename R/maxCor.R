@@ -33,6 +33,10 @@
 #' selected subsets of variables, or to specify the subsets of variables 
 #' directly.
 #' 
+#' Note that also the data sets are ordered according to the maximum average 
+#' absolute correlation with the respective other data set to ensure symmetry 
+#' of the algorithm.
+#' 
 #' @aliases print.maxCor
 #' 
 #' @param x,y  each can be a numeric vector, matrix or data frame.

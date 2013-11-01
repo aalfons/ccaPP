@@ -68,7 +68,7 @@ double corSpearman(const vec& x, const vec& y) {
 		if(ISNAN(x(i)) || ISNAN(y(i))) return(NA_REAL);
 	}
 	// compute ranks
-	vec ranksX = rank(x), ranksY = rank(y);
+	vec ranksX = rank_ccaPP(x), ranksY = rank_ccaPP(y);
 	// return Pearson correlation for ranks
 	return corPearson(ranksX, ranksY);
 }

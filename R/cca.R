@@ -33,10 +33,13 @@
 #' selected subsets of variables, or to specify the subsets of variables 
 #' directly.
 #' 
-#' For higher order canonical correlations, a Householder transformation is 
-#' first applied to transform the data to an orthogonal subspace.  Then the 
-#' alternate grid algorithm is applied in this orthogonal subspace and the 
-#' results are back-transformed to the original space.
+#' Note that also the data sets are ordered according to the maximum average 
+#' absolute correlation with the respective other data set to ensure symmetry 
+#' of the algorithm.
+#' 
+#' For higher order canonical correlations, the data are first transformed into 
+#' suitable subspaces.  Then the alternate grid algorithm is applied to the 
+#' reduced data and the results are back-transformed to the original space.
 #' 
 #' @aliases print.cca
 #' 
@@ -191,10 +194,9 @@ CCAgrid <- function(x, y, k = 1,
 #' scans all \eqn{n^2} possible combinations for the maximum correlation, 
 #' where \eqn{n} is the number of observations.
 #' 
-#' For higher order canonical correlations, a Householder transformation is 
-#' first applied to transform the data to an orthogonal subspace.  Then the 
-#' alternate grid algorithm is applied in this orthogonal subspace and the 
-#' results are back-transformed to the original space.
+#' For higher order canonical correlations, the data are first transformed into 
+#' suitable subspaces.  Then the alternate grid algorithm is applied to the 
+#' reduced data and the results are back-transformed to the original space.
 #' 
 #' @param x,y  each can be a numeric vector, matrix or data frame.
 #' @param k  an integer giving the number of canonical variables to compute.

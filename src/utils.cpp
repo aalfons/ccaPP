@@ -215,7 +215,8 @@ uvec order(const vec& x) {
 }
 
 // compute ranks of observations in a vector
-vec rank(const vec& x) {
+// function name 'rank' causes error with clang++ on OS X Mavericks
+vec rank_ccaPP(const vec& x) {
 	const uword n = x.n_elem;
 	uword i, j, k;
 	// compute order of observations
@@ -237,10 +238,10 @@ vec rank(const vec& x) {
 	return ranks;
 }
 
-// R interface to rank() (for testing)
+// R interface to rank_ccaPP() (for testing)
 SEXP R_rank(SEXP R_x) {
-	NumericVector Rcpp_x(R_x);						// convert data to Rcpp type
-	vec x(Rcpp_x.begin(), Rcpp_x.size(), false);	// convert data to arma type
-	vec ranks = rank(x);							// call arma version
-	return wrap(ranks.memptr(), ranks.memptr() + ranks.n_elem);
+  NumericVector Rcpp_x(R_x);                    // convert data to Rcpp type
+  vec x(Rcpp_x.begin(), Rcpp_x.size(), false);  // convert data to arma type
+  vec ranks = rank_ccaPP(x);                    // call arma version
+  return wrap(ranks.memptr(), ranks.memptr() + ranks.n_elem);
 }

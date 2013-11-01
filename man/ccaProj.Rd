@@ -100,11 +100,11 @@
   possible combinations for the maximum correlation, where
   \eqn{n} is the number of observations.
 
-  For higher order canonical correlations, a Householder
-  transformation is first applied to transform the data to
-  an orthogonal subspace.  Then the alternate grid
-  algorithm is applied in this orthogonal subspace and the
-  results are back-transformed to the original space.
+  For higher order canonical correlations, the data are
+  first transformed into suitable subspaces.  Then the
+  alternate grid algorithm is applied to the reduced data
+  and the results are back-transformed to the original
+  space.
 }
 \note{
   \code{CCAproj} is a simple wrapper function for

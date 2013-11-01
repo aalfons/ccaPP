@@ -136,6 +136,10 @@
   thereby possible to use randomly selected subsets of
   variables, or to specify the subsets of variables
   directly.
+
+  Note that also the data sets are ordered according to the
+  maximum average absolute correlation with the respective
+  other data set to ensure symmetry of the algorithm.
 }
 \examples{
 ## generate data

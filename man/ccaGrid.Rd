@@ -153,11 +153,15 @@
   variables, or to specify the subsets of variables
   directly.
 
-  For higher order canonical correlations, a Householder
-  transformation is first applied to transform the data to
-  an orthogonal subspace.  Then the alternate grid
-  algorithm is applied in this orthogonal subspace and the
-  results are back-transformed to the original space.
+  Note that also the data sets are ordered according to the
+  maximum average absolute correlation with the respective
+  other data set to ensure symmetry of the algorithm.
+
+  For higher order canonical correlations, the data are
+  first transformed into suitable subspaces.  Then the
+  alternate grid algorithm is applied to the reduced data
+  and the results are back-transformed to the original
+  space.
 }
 \note{
   \code{CCAgrid} is a simple wrapper function for
