@@ -1,6 +1,6 @@
 \name{ccaGrid}
-\alias{ccaGrid}
 \alias{CCAgrid}
+\alias{ccaGrid}
 \alias{print.cca}
 \title{(Robust) CCA via alternating series of grid searches}
 \usage{

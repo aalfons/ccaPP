@@ -1,6 +1,6 @@
 \name{ccaProj}
-\alias{ccaProj}
 \alias{CCAproj}
+\alias{ccaProj}
 \title{(Robust) CCA via projections through the data points}
 \usage{
   ccaProj(x, y, k = 1,
