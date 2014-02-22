@@ -340,6 +340,12 @@ ccaPP <- function(x, y, k = 1,
     A <- B <- matrix(numeric(), 0, 0)
     cca <- list(cor=NA, A=A, B=B)
   } else {
+    # check high-dimensional data
+    if(k > 1 && (n <= p+1 || n <= q+1)) {
+      k <- 1
+      warning("higher-order canonical correlations not yet implemented", 
+              "for high-dimensional data")
+    }
     # check method and get list of control arguments
     method <- match.arg(method)
     corControl <- getCorControl(method, corControl, forceConsistency)
