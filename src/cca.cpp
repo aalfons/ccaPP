@@ -1353,84 +1353,101 @@ SEXP R_ccaPP(SEXP R_x, SEXP R_y, SEXP R_k, SEXP R_method, SEXP R_corControl,
 // y ............ second data matrix
 // corControl ... control object to compute correlation
 // ppControl .... control object for sparse algorithm
-// robust ....... should the data be robustly standardized?
+// standard ..... should the data be standardized?
+// robust ....... should robust standardization be used?
 // fallback ..... should the fallback mode for robust standardization be used?
 // A ............ matrix of weighting vectors for first matrix to be updated
 // B ............ matrix of weighting vectors for second matrix to be updated
 template <class CorControl, class PPControl>
 vec sMaxCorPP(const mat& x, const mat& y, CorControl& corControl,
-  	PPControl& ppControl, const bool& robust, const bool& fallback,
-		mat& A, mat& B, vec& objective) {
-	// standardize the data
-	vec scaleX, scaleY;
-	mat xs = standardize(x, robust, fallback, scaleX);
-	mat ys = standardize(y, robust, fallback, scaleY);
-	// compute maximum correlations with standardized data
-  vec r = ppControl.maxCor(xs, ys, corControl, A, B, objective);
-  // transform weighting vectors back to original scale
-  for(uword k = 0; k < A.n_cols; k++) {
-    vec a = A.unsafe_col(k); backtransform(a, scaleX);
-	}
-  for(uword k = 0; k < B.n_cols; k++) {
-    vec b = B.unsafe_col(k); backtransform(b, scaleY);
-	}
+  	PPControl& ppControl, const bool& standard, const bool& robust, 
+    const bool& fallback, mat& A, mat& B, vec& centerX, vec& centerY, 
+    vec& scaleX, vec& scaleY, vec& objective) {
+  // initializations
+  vec r;
+  // standardize the data if requested
+  mat xs, ys;
+  if(standard) {
+    xs = standardize(x, robust, fallback, centerX, scaleX);
+    ys = standardize(y, robust, fallback, centerY, scaleY);
+    // compute maximum correlations with standardized data
+    r = ppControl.maxCor(xs, ys, corControl, A, B, objective);
+    // transform weighting vectors back to original scale
+    for(uword k = 0; k < A.n_cols; k++) {
+      vec a = A.unsafe_col(k); backtransform(a, scaleX);
+    }
+    for(uword k = 0; k < B.n_cols; k++) {
+      vec b = B.unsafe_col(k); backtransform(b, scaleY);
+    }
+  } else {
+    uword p = x.n_cols, q = y.n_cols;
+    centerX = zeros<vec>(p); centerY = zeros<vec>(q);
+    scaleX = ones<vec>(p); scaleY = ones<vec>(q);
+    // compute maximum correlations with original data
+    r = ppControl.maxCor(x, y, corControl, A, B, objective);
+  }
   // return vector of maximum correlations
-	return r;
+  return r;
 }
 
 // R interface
 SEXP R_sMaxCorPP(SEXP R_x, SEXP R_y, SEXP R_method, SEXP R_corControl,
-		SEXP R_algorithm, SEXP R_ppControl, SEXP R_fallback) {
+		SEXP R_algorithm, SEXP R_ppControl, SEXP R_standardize, SEXP R_fallback) {
 	// initializations
 	NumericMatrix Rcpp_x(R_x), Rcpp_y(R_y);	// convert data to Rcpp types
 	mat x(Rcpp_x.begin(), Rcpp_x.nrow(), Rcpp_x.ncol(), false);	// convert data
 	mat y(Rcpp_y.begin(), Rcpp_y.nrow(), Rcpp_y.ncol(), false);	// to arma types
-	string method = as<string>(R_method);		// convert character string
-	List Rcpp_corControl(R_corControl);			// list of control parameters
-	string algorithm = as<string>(R_algorithm);	// convert character string
-	List Rcpp_ppControl(R_ppControl);			  // list of control parameters
-	bool fallback = as<bool>(R_fallback);		// convert to boolean
-	// initialize results
-	vec r, lambdaX, lambdaY, objective;
-	mat A, B;
+  string method = as<string>(R_method);       // convert character string
+  List Rcpp_corControl(R_corControl);         // list of control parameters
+  string algorithm = as<string>(R_algorithm); // convert character string
+  List Rcpp_ppControl(R_ppControl);           // list of control parameters
+  bool standard = as<bool>(R_standardize);    // convert to boolean
+  bool fallback = as<bool>(R_fallback);       // convert to boolean
+  // initialize results
+  vec r, centerX, centerY, scaleX, scaleY, lambdaX, lambdaY, objective;
+  mat A, B;
   if(algorithm == "grid") {
-		// define control object for alternate grid searches
-		SparseGridControl ppControl(Rcpp_ppControl);
-		// define control object for the correlations and call the arma version
-		if(method == "spearman") {
-			CorSpearmanControl corControl(Rcpp_corControl);
-			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
-          A, B, objective);
-		} else if(method == "kendall") {
-			CorKendallControl corControl(Rcpp_corControl);
-			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
-          A, B, objective);
-		} else if(method == "quadrant") {
-			CorQuadrantControl corControl(Rcpp_corControl);
-			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
-          A, B, objective);
-		} else if(method == "M") {
-			CorMControl corControl(Rcpp_corControl);
-			r = sMaxCorPP(x, y, corControl, ppControl, true, fallback, 
-          A, B, objective);
-		} else if(method == "pearson") {
-			CorPearsonControl corControl;
-			r = sMaxCorPP(x, y, corControl, ppControl, false, false, 
-          A, B, objective);
-		} else {
-			error("method not available");
-		}
+    // define control object for alternate grid searches
+    SparseGridControl ppControl(Rcpp_ppControl);
+    // define control object for the correlations and call the arma version
+    if(method == "spearman") {
+      CorSpearmanControl corControl(Rcpp_corControl);
+      r = sMaxCorPP(x, y, corControl, ppControl, standard, true, fallback, 
+          A, B, centerX, centerY, scaleX, scaleY, objective);
+    } else if(method == "kendall") {
+      CorKendallControl corControl(Rcpp_corControl);
+      r = sMaxCorPP(x, y, corControl, ppControl, standard, true, fallback, 
+          A, B, centerX, centerY, scaleX, scaleY, objective);
+    } else if(method == "quadrant") {
+      CorQuadrantControl corControl(Rcpp_corControl);
+      r = sMaxCorPP(x, y, corControl, ppControl, standard, true, fallback, 
+          A, B, centerX, centerY, scaleX, scaleY, objective);
+    } else if(method == "M") {
+      CorMControl corControl(Rcpp_corControl);
+      r = sMaxCorPP(x, y, corControl, ppControl, standard, true, fallback, 
+          A, B, centerX, centerY, scaleX, scaleY, objective);
+    } else if(method == "pearson") {
+      CorPearsonControl corControl;
+      r = sMaxCorPP(x, y, corControl, ppControl, standard, false, false, 
+          A, B, centerX, centerY, scaleX, scaleY, objective);
+    } else {
+      error("method not available");
+    }
     lambdaX = ppControl.lambda.col(0); lambdaY = ppControl.lambda.col(1); 
-	} else {
-		error("algorithm not available");
-	}
-	// wrap and return result
-	return List::create(
-			Named("cor") = wrap(r.begin(), r.end()),
-			Named("a") = A,
-  		Named("b") = B,
-    	Named("lambdaX") = wrap(lambdaX.begin(), lambdaX.end()),
-    	Named("lambdaY") = wrap(lambdaY.begin(), lambdaY.end()),
-    	Named("objective") = wrap(objective.begin(), objective.end())
+  } else {
+    error("algorithm not available");
+  }
+  // wrap and return result
+  return List::create(
+      Named("cor") = wrap(r.begin(), r.end()),
+      Named("a") = A,
+      Named("b") = B,
+      Named("centerX") = centerX,
+      Named("centerY") = centerY,
+      Named("scaleX") = scaleX,
+      Named("scaleY") = scaleY,
+      Named("lambdaX") = wrap(lambdaX.begin(), lambdaX.end()),
+      Named("lambdaY") = wrap(lambdaY.begin(), lambdaY.end()),
+      Named("objective") = wrap(objective.begin(), objective.end())
 			);
 }

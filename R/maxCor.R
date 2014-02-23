@@ -146,11 +146,11 @@
 #' y <- xy[, (p+1):m]
 #' 
 #' ## Spearman correlation
-#' maxCorProj(x, y, method = "spearman")
-#' maxCorProj(x, y, method = "spearman", consistent = TRUE)
+#' maxCorGrid(x, y, method = "spearman")
+#' maxCorGrid(x, y, method = "spearman", consistent = TRUE)
 #' 
 #' ## Pearson correlation
-#' maxCorProj(x, y, method = "pearson")
+#' maxCorGrid(x, y, method = "pearson")
 #' 
 #' @keywords multivariate robust
 #' 
@@ -161,10 +161,9 @@
 
 maxCorGrid <- function(x, y, 
                        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
-                       control = list(...), nIterations = 10, 
-                       nAlternate = 10, nGrid = 25, select = NULL, 
-                       tol = 1e-06, standardize = TRUE, fallback = FALSE, 
-                       seed = NULL, ...) {
+                       control = list(...), nIterations = 10, nAlternate = 10, 
+                       nGrid = 25, select = NULL, tol = 1e-06, 
+                       standardize = TRUE, fallback = FALSE, seed = NULL, ...) {
   ## initializations
   matchedCall <- match.call()
   ## define list of control arguments for algorithm
@@ -188,13 +187,13 @@ maxCorGrid <- function(x, y,
 #' @export
 
 sMaxCorGrid <- function(x, y, lambdaX = 0, lambdaY = 0, 
-                        method = c("spearman", "kendall", "quadrant", 
-                                   "M", "pearson"), 
+                        method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
                         control = list(...), nIterations = 10, nAlternate = 10, 
-                        nGrid = 25, select = NULL, tol = 1e-06, K = 5, R = 1, 
+                        nGrid = 25, select = NULL, tol = 1e-06, 
+                        standardize = TRUE, fallback = FALSE, K = 5, R = 1, 
                         type = c("random", "consecutive", "interleaved"), 
                         grouping = NULL, folds = NULL, nCores = 1, cl = NULL, 
-                        fallback = FALSE, seed = NULL, ...) {
+                        seed = NULL, ...) {
   ## initializations
   matchedCall <- match.call()
   ## define list of control arguments for algorithm
@@ -210,9 +209,10 @@ sMaxCorGrid <- function(x, y, lambdaX = 0, lambdaY = 0,
                     nAlternate=nAlternate, nGrid=nGrid, select=select, tol=tol)
   ## call workhorse function
   maxCor <- sMaxCorPP(x, y, method=method, corControl=control, 
-                      algorithm="grid", ppControl=ppControl, K=K, 
+                      algorithm="grid", ppControl=ppControl, 
+                      standardize=standardize, fallback=fallback, K=K, 
                       R=R, type=type, grouping=grouping, folds=folds, 
-                      nCores=nCores, cl=cl, fallback=fallback, seed=seed)
+                      nCores=nCores, cl=cl, seed=seed)
   maxCor$call <- matchedCall
   maxCor
 }
@@ -335,11 +335,11 @@ maxCorPP <- function(x, y, ...) {
 
 ## workhorse function for sparse maximum correlation
 #' @import parallel
-sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant", 
-                                       "M", "pearson"), 
-                      corControl, algorithm = "grid", ppControl, folds = NULL, 
-                      nCores = 1, cl = NULL, fallback = FALSE, seed = NULL, 
-                      ...) {
+sMaxCorPP <- function(x, y, 
+                      method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
+                      corControl, algorithm = "grid", ppControl, 
+                      standardize = TRUE, fallback = FALSE, folds = NULL, 
+                      nCores = 1, cl = NULL, seed = NULL, ...) {
   ## initializations
   x <- as.matrix(x)
   y <- as.matrix(y)
@@ -356,6 +356,7 @@ sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant",
     # get list of control arguments
     method <- match.arg(method)
     corControl <- getCorControl(method, corControl, forceConsistency=FALSE)
+    standardize <- isTRUE(standardize)
     fallback <- isTRUE(fallback)
     if(!is.null(seed)) set.seed(seed)
     ppControl <- getPPControl(algorithm, ppControl, p=p, q=q)
@@ -396,7 +397,8 @@ sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant",
       }
       # perform cross-validation over grid of tuning parameters
       call <- call("sMaxCorPPFit", method=method, corControl=corControl, 
-                   algorithm=algorithm, ppControl=ppControl, fallback=fallback)
+                   algorithm=algorithm, ppControl=ppControl, 
+                   standardize=standardize, fallback=fallback)
       call[[1]] <- sMaxCorPPFit  # necessary to work with parallel computing
       corFun <- switch(method, spearman=corSpearman, kendall=corKendall, 
                        quadrant=corQuadrant, M=corM, pearson=corPearson)
@@ -408,7 +410,7 @@ sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant",
     # compute the final solution
     maxCor <- sMaxCorPPFit(x, y, method=method, corControl=corControl, 
                            algorithm=algorithm, ppControl=ppControl, 
-                           fallback=fallback)
+                           standardize=standardize, fallback=fallback)
     maxCor$a <- drop(maxCor$a)
     maxCor$b <- drop(maxCor$b)
     if(useCV) maxCor$cv <- cbind(lambda, CV=cv)
@@ -419,13 +421,13 @@ sMaxCorPP <- function(x, y, method = c("spearman", "kendall", "quadrant",
 }
 
 ## simple wrapper for calling the C++ function
-sMaxCorPPFit <- function(x, y, method = c("spearman", "kendall", "quadrant", 
-                                          "M", "pearson"), 
+sMaxCorPPFit <- function(x, y, 
+                         method = c("spearman", "kendall", "quadrant", "M", "pearson"), 
                          corControl, algorithm = "grid", ppControl, 
-                         fallback = FALSE) {
+                         standardize = TRUE, fallback = FALSE) {
   # call C++ function
   maxCor <- .Call("R_sMaxCorPP", R_x=x, R_y=y, R_method=method, 
                   R_corControl=corControl, R_algorithm=algorithm, 
-                  R_ppControl=ppControl, R_fallback=fallback, 
-                  PACKAGE="ccaPP")
+                  R_ppControl=ppControl, R_standardize=standardize, 
+                  R_fallback=fallback, PACKAGE="ccaPP")
 }

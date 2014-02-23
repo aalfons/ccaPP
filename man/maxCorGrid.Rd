@@ -13,10 +13,11 @@
   sMaxCorGrid(x, y, lambdaX = 0, lambdaY = 0,
     method = c("spearman", "kendall", "quadrant", "M", "pearson"),
     control = list(...), nIterations = 10, nAlternate = 10,
-    nGrid = 25, select = NULL, tol = 1e-06, K = 5, R = 1,
+    nGrid = 25, select = NULL, tol = 1e-06,
+    standardize = TRUE, fallback = FALSE, K = 5, R = 1,
     type = c("random", "consecutive", "interleaved"),
     grouping = NULL, folds = NULL, nCores = 1, cl = NULL,
-    fallback = FALSE, seed = NULL, ...)
+    seed = NULL, ...)
 }
 \arguments{
   \item{x,y}{each can be a numeric vector, matrix or data
@@ -215,11 +216,11 @@ x <- xy[, 1:p]
 y <- xy[, (p+1):m]
 
 ## Spearman correlation
-maxCorProj(x, y, method = "spearman")
-maxCorProj(x, y, method = "spearman", consistent = TRUE)
+maxCorGrid(x, y, method = "spearman")
+maxCorGrid(x, y, method = "spearman", consistent = TRUE)
 
 ## Pearson correlation
-maxCorProj(x, y, method = "pearson")
+maxCorGrid(x, y, method = "pearson")
 }
 \author{
   Andreas Alfons
