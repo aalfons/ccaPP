@@ -14,11 +14,11 @@ Canonical correlation analysis and maximum correlation via
 \tabular{ll}{
 Package: \tab ccaPP\cr
 Type: \tab Package\cr
-Version: \tab 0.3.0\cr
-Date: \tab 2013-04-03\cr
-Depends: \tab Rcpp (>= 0.9.10), parallel, pcaPP (>= 1.8-1)\cr
-Imports: \tab RcppArmadillo (>= 0.2.36)\cr
-LinkingTo: \tab Rcpp, RcppArmadillo\cr
+Version: \tab 0.4.0\cr
+Date: \tab 2014-02-22\cr
+Depends: \tab R (>= 3.0.2), parallel, pcaPP (>= 1.8-1), robustbase\cr
+Imports: \tab Rcpp, RcppArmadillo\cr
+LinkingTo: \tab Rcpp (>= 0.9.10), RcppArmadillo (>= 0.2.36)\cr
 Suggests: \tab mvtnorm\cr
 License: \tab GPL (>= 2)\cr
 LazyLoad: \tab yes\cr
