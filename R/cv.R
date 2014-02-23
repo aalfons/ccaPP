@@ -1,7 +1,7 @@
-# ----------------------
+# --------------------------------------
 # Author: Andreas Alfons
-#         KU Leuven
-# ----------------------
+#         Erasmus Universiteit Rotterdam
+# --------------------------------------
 
 ## perform cross-validation
 cvMaxCor <- function(call, x, y, folds, corFun = corSpearman, corArgs = list(), 

@@ -36,7 +36,7 @@
 
 /*
  * Modifications: Andreas Alfons
- *                KU Leuven
+ *                Erasmus Universiteit Rotterdam
  */
 
 
