@@ -87,16 +87,9 @@
   \eqn{n} is the number of observations.
 }
 \examples{
-## generate data
-library("mvtnorm")
-set.seed(1234)  # for reproducibility
-p <- 3
-q <- 2
-m <- p + q
-sigma <- 0.5^t(sapply(1:m, function(i, j) abs(i-j), 1:m))
-xy <- rmvnorm(100, sigma=sigma)
-x <- xy[, 1:p]
-y <- xy[, (p+1):m]
+data("diabetes")
+x <- diabetes$x
+y <- diabetes$y
 
 ## Spearman correlation
 maxCorProj(x, y, method = "spearman")

@@ -34,6 +34,7 @@ ccaProj                 (Robust) CCA via projections through the data
                         points
 corFunctions            Fast implementations of (robust) correlation
                         estimators
+diabetes                Diabetes data
 fastMAD                 Fast implementation of the median absolute
                         deviation
 fastMedian              Fast implementation of the median
