@@ -3,7 +3,7 @@
 #         KU Leuven
 # ----------------------
 
-#' @S3method print cca
+#' @export
 print.cca <- function(x, ...) {
     # print function call
     if(!is.null(call <- x$call)) {
@@ -17,7 +17,7 @@ print.cca <- function(x, ...) {
     invisible(x)
 }
 
-#' @S3method print maxCor
+#' @export
 print.maxCor <- function(x, ...) {
     # print function call
     if(!is.null(call <- x$call)) {
@@ -31,7 +31,7 @@ print.maxCor <- function(x, ...) {
     invisible(x)
 }
 
-#' @S3method print permTest
+#' @export
 print.permTest <- function(x, ...) {
     # print general statement
     cat("\nPermutation test for independence\n\n")

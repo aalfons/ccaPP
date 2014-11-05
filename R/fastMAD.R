@@ -13,7 +13,7 @@
 #' @param constant  a numeric multiplication factor.  The default value yields 
 #' consistency at the normal model.
 #' 
-#' @returnList
+#' @return A list with the following components:
 #' @returnItem center  a numeric value giving the sample median.
 #' @returnItem MAD  a numeric value giving the median absolute deviation.
 #' 
