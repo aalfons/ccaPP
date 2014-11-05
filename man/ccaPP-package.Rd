@@ -15,7 +15,7 @@ Canonical correlation analysis and maximum correlation via
 Package: \tab ccaPP\cr
 Type: \tab Package\cr
 Version: \tab 0.3.1\cr
-Date: \tab 2014-02-22\cr
+Date: \tab 2014-11-06\cr
 Depends: \tab R (>= 3.0.2), parallel, pcaPP (>= 1.8-1), robustbase\cr
 Imports: \tab Rcpp, RcppArmadillo\cr
 LinkingTo: \tab Rcpp (>= 0.9.10), RcppArmadillo (>= 0.2.36)\cr
