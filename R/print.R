@@ -24,7 +24,7 @@ print.maxCor <- function(x, ...) {
         cat("\nCall:\n")
         dput(x$call)
     }
-    # print maximum correlation
+    # print maximum association
     cat("\nMaximum correlation:\n")
     print(x$cor, ...)
     # return object invisibly
@@ -34,7 +34,7 @@ print.maxCor <- function(x, ...) {
 #' @export
 print.permTest <- function(x, ...) {
     # print general statement
-    cat("\nPermutation test for independence\n\n")
+    cat("\nPermutation test for no association\n\n")
     # print maximum correlation and p-value
     cat(sprintf("r = %f, p-value = %f\n", x$cor0, x$pValue))
     # print number of random permuations
