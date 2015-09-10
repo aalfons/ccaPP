@@ -3,10 +3,10 @@
 #         KU Leuven
 # ----------------------
 
-#' (Robust) permutation test for independence
+#' (Robust) permutation test for no association
 #' 
-#' Test for independence of two data sets, with a focus on robust and 
-#' nonparametric correlation measures.
+#' Test whether or not there is association betwenn two data sets, with a focus 
+#' on robust and nonparametric correlation measures.
 #' 
 #' The test generates \code{R} data sets by randomly permuting the observations 
 #' of \code{x}, while keeping the observations of \code{y} fixed.  In each 
