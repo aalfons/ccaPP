@@ -5,6 +5,9 @@ Changes in ccaPP version 0.3.1
     + Print method and help file of permutation tests no longer use the term 
       'independence'.
     
+    + Functions for robust CCA now standardize dummy variables with mean and 
+      standard deviation.
+    
     + Bugfix in functions for CCA: R session no longer crashes for higher-order 
       canonical correlations in case of high-dimensional data.
 

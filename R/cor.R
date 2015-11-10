@@ -93,8 +93,6 @@
 #' 
 #' @keywords multivariate robust
 #' 
-#' @import Rcpp
-#' @import RcppArmadillo
 #' @useDynLib ccaPP
 
 NULL
