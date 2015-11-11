@@ -128,6 +128,7 @@
 #' 
 #' @keywords multivariate robust
 #' 
+#' @importFrom Rcpp evalCpp
 #' @import robustbase
 #' @useDynLib ccaPP
 #' @export
@@ -259,6 +260,7 @@ CCAgrid <- function(x, y, k = 1,
 #' 
 #' @keywords multivariate robust
 #' 
+#' @importFrom Rcpp evalCpp
 #' @import pcaPP
 #' @import robustbase
 #' @useDynLib ccaPP
