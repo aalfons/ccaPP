@@ -20,3 +20,6 @@ License: GPL (>= 2)
 LazyLoad: yes
 Authors@R: c(person("Andreas", "Alfons", email = "alfons@ese.eur.nl",
     role = c("aut", "cre")), person("David", "Simcha", role = "ctb"))
+Author: Andreas Alfons [aut, cre],
+    David Simcha [ctb]
+Maintainer: Andreas Alfons <alfons@ese.eur.nl>
