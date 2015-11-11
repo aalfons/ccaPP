@@ -64,6 +64,7 @@
 #' 
 #' @keywords multivariate robust
 #' 
+#' @importFrom stats runif
 #' @import parallel
 #' @export
 
