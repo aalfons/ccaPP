@@ -1,8 +1,8 @@
 Package: ccaPP
 Type: Package
 Title: (Robust) Canonical Correlation Analysis via Projection Pursuit
-Version: 0.3.1
-Date: 2015-11-11
+Version: 0.3.2
+Date: 2016-02-26
 Depends:
     R (>= 3.2.0),
     parallel,
@@ -12,7 +12,9 @@ Imports:
     Rcpp (>= 0.11.0)
 LinkingTo: Rcpp (>= 0.11.0), RcppArmadillo (>= 0.4.100.0)
 Suggests:
+    knitr,
     mvtnorm
+VignetteBuilder: knitr
 Description: Canonical correlation analysis and maximum correlation via
     projection pursuit, as well as fast implementations of correlation
     estimators, with a focus on robust and nonparametric methods.
