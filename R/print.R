@@ -3,7 +3,7 @@
 #         Erasmus Universiteit Rotterdam
 # --------------------------------------
 
-#' @S3method print cca
+#' @export
 print.cca <- function(x, ...) {
     # print function call
     if(!is.null(call <- x$call)) {
@@ -17,7 +17,7 @@ print.cca <- function(x, ...) {
     invisible(x)
 }
 
-#' @S3method print cvFolds
+#' @export
 print.cvFolds <- function(x, ...) {
   # print general information
   cvText <- if(x$n == x$K) "Leave-one-out CV" else sprintf("%d-fold CV", x$K)
@@ -40,24 +40,24 @@ print.cvFolds <- function(x, ...) {
   invisible(x)
 }
 
-#' @S3method print maxCor
+#' @export
 print.maxCor <- function(x, ...) {
     # print function call
     if(!is.null(call <- x$call)) {
         cat("\nCall:\n")
         dput(x$call)
     }
-    # print maximum correlation
+    # print maximum association
     cat("\nMaximum correlation:\n")
     print(x$cor, ...)
     # return object invisibly
     invisible(x)
 }
 
-#' @S3method print permTest
+#' @export
 print.permTest <- function(x, ...) {
     # print general statement
-    cat("\nPermutation test for independence\n\n")
+    cat("\nPermutation test for no association\n\n")
     # print maximum correlation and p-value
     cat(sprintf("r = %f, p-value = %f\n", x$cor0, x$pValue))
     # print number of random permuations
@@ -68,7 +68,7 @@ print.permTest <- function(x, ...) {
     invisible(x)
 }
 
-#' @S3method print sMaxCor
+#' @export
 print.sMaxCor <- function(x, ...) {
   print.maxCor(x, ...)
   # print optimal tuning parameters
