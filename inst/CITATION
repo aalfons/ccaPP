@@ -32,5 +32,5 @@ citEntry(entry = "Article",
   paste("Andreas Alfons, Christophe Croux, Peter Filzmoser (2017).",
         "Robust maximum association estimators.",
         "Journal of the American Statistical Association,",
-        "112(517), 436--445.")
+        "112(517), 436-445.")
 )
