@@ -124,7 +124,7 @@
 #' @keywords multivariate robust
 #'
 #' @importFrom Rcpp evalCpp
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 maxCorGrid <- function(x, y,
@@ -226,7 +226,7 @@ maxCorGrid <- function(x, y,
 #'
 #' @importFrom Rcpp evalCpp
 #' @import pcaPP
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 maxCorProj <- function(x, y,

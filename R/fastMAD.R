@@ -32,7 +32,7 @@
 #' @keywords multivariate robust
 #'
 #' @importFrom Rcpp evalCpp
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 fastMAD <- function(x, constant = 1.4826) {
