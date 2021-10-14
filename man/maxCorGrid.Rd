@@ -6,17 +6,46 @@
 \alias{sMaxCorGrid}
 \title{(Robust) maximum correlation via alternating series of grid searches}
 \usage{
-maxCorGrid(x, y, method = c("spearman", "kendall", "quadrant", "M",
-  "pearson"), control = list(...), nIterations = 10, nAlternate = 10,
-  nGrid = 25, select = NULL, tol = 1e-06, standardize = TRUE,
-  fallback = FALSE, seed = NULL, ...)
+maxCorGrid(
+  x,
+  y,
+  method = c("spearman", "kendall", "quadrant", "M", "pearson"),
+  control = list(...),
+  nIterations = 10,
+  nAlternate = 10,
+  nGrid = 25,
+  select = NULL,
+  tol = 1e-06,
+  standardize = TRUE,
+  fallback = FALSE,
+  seed = NULL,
+  ...
+)
 
-sMaxCorGrid(x, y, lambdaX = 0, lambdaY = 0, method = c("spearman",
-  "kendall", "quadrant", "M", "pearson"), control = list(...),
-  nIterations = 10, nAlternate = 10, nGrid = 25, select = NULL,
-  tol = 1e-06, standardize = TRUE, fallback = FALSE, K = 5, R = 1,
-  type = c("random", "consecutive", "interleaved"), grouping = NULL,
-  folds = NULL, nCores = 1, cl = NULL, seed = NULL, ...)
+sMaxCorGrid(
+  x,
+  y,
+  lambdaX = 0,
+  lambdaY = 0,
+  method = c("spearman", "kendall", "quadrant", "M", "pearson"),
+  control = list(...),
+  nIterations = 10,
+  nAlternate = 10,
+  nGrid = 25,
+  select = NULL,
+  tol = 1e-06,
+  standardize = TRUE,
+  fallback = FALSE,
+  K = 5,
+  R = 1,
+  type = c("random", "consecutive", "interleaved"),
+  grouping = NULL,
+  folds = NULL,
+  nCores = 1,
+  cl = NULL,
+  seed = NULL,
+  ...
+)
 }
 \arguments{
 \item{x, y}{each can be a numeric vector, matrix or data frame.}
@@ -124,7 +153,7 @@ based on alternating series of grid searches in two-dimensional subspaces of
 each data set, with a focus on robust and nonparametric methods.
 }
 \details{
-\code{maxCorGrid} is based on alternating series of grid searches in
+The algorithm is based on alternating series of grid searches in
 two-dimensional subspaces of each data set.  In each grid search,
 \code{nGrid} grid points on the unit circle in the corresponding plane are
 obtained, and the directions from the center to each of the grid points are

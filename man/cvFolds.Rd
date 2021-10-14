@@ -5,8 +5,13 @@
 \alias{print.cvFolds}
 \title{Cross-validation folds}
 \usage{
-cvFolds(n, K = 5, R = 1, type = c("random", "consecutive", "interleaved"),
-  grouping = NULL)
+cvFolds(
+  n,
+  K = 5,
+  R = 1,
+  type = c("random", "consecutive", "interleaved"),
+  grouping = NULL
+)
 }
 \arguments{
 \item{n}{an integer giving the number of observations to be split into

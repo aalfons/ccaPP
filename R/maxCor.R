@@ -9,7 +9,7 @@
 #' based on alternating series of grid searches in two-dimensional subspaces of
 #' each data set, with a focus on robust and nonparametric methods.
 #'
-#' \code{maxCorGrid} is based on alternating series of grid searches in
+#' The algorithm is based on alternating series of grid searches in
 #' two-dimensional subspaces of each data set.  In each grid search,
 #' \code{nGrid} grid points on the unit circle in the corresponding plane are
 #' obtained, and the directions from the center to each of the grid points are
@@ -157,14 +157,15 @@
 #' @keywords multivariate robust
 #'
 #' @importFrom Rcpp evalCpp
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 maxCorGrid <- function(x, y,
                        method = c("spearman", "kendall", "quadrant", "M", "pearson"),
-                       control = list(...), nIterations = 10, nAlternate = 10,
-                       nGrid = 25, select = NULL, tol = 1e-06,
-                       standardize = TRUE, fallback = FALSE, seed = NULL, ...) {
+                       control = list(...), nIterations = 10,
+                       nAlternate = 10, nGrid = 25, select = NULL,
+                       tol = 1e-06, standardize = TRUE, fallback = FALSE,
+                       seed = NULL, ...) {
   ## initializations
   matchedCall <- match.call()
   ## define list of control arguments for algorithm
@@ -293,7 +294,7 @@ sMaxCorGrid <- function(x, y, lambdaX = 0, lambdaY = 0,
 #'
 #' @importFrom Rcpp evalCpp
 #' @import pcaPP
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 maxCorProj <- function(x, y,

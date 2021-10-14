@@ -16,7 +16,7 @@ The sample median.
 Compute the sample median with a fast C++ implementation.
 }
 \note{
-Functionality for removing observations with missing values is 
+Functionality for removing observations with missing values is
 currently not implemented.
 }
 \examples{

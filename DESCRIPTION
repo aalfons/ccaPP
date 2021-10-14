@@ -2,7 +2,7 @@ Package: ccaPP
 Type: Package
 Title: (Robust) Canonical Correlation Analysis via Projection Pursuit
 Version: 0.4.0
-Date: 2018-06-14
+Date: 2021-10-14
 Depends:
     R (>= 3.2.0),
     parallel,
@@ -25,4 +25,5 @@ Authors@R: c(person("Andreas", "Alfons", email = "alfons@ese.eur.nl",
 Author: Andreas Alfons [aut, cre],
     David Simcha [ctb]
 Maintainer: Andreas Alfons <alfons@ese.eur.nl>
-RoxygenNote: 6.0.1
+Encoding: UTF-8
+RoxygenNote: 7.1.2

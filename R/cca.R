@@ -129,7 +129,7 @@
 #'
 #' @importFrom Rcpp evalCpp
 #' @import robustbase
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 ccaGrid <- function(x, y, k = 1,
@@ -306,7 +306,7 @@ CCAgrid <- function(x, y, k = 1,
 #' @importFrom Rcpp evalCpp
 #' @import pcaPP
 #' @import robustbase
-#' @useDynLib ccaPP
+#' @useDynLib ccaPP, .registration = TRUE
 #' @export
 
 ccaProj <- function(x, y, k = 1,
