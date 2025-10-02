@@ -2,7 +2,7 @@ Package: ccaPP
 Type: Package
 Title: (Robust) Canonical Correlation Analysis via Projection Pursuit
 Version: 0.3.5
-Date: 2025-10-01
+Date: 2025-10-02
 Depends:
     R (>= 3.2.0),
     parallel,
@@ -10,7 +10,7 @@ Depends:
     robustbase
 Imports:
     Rcpp (>= 0.11.0)
-LinkingTo: Rcpp (>= 0.11.0), RcppArmadillo (>= 0.4.100.0)
+LinkingTo: Rcpp (>= 0.11.0), RcppArmadillo (>= 0.7.200.1.0)
 Suggests:
     knitr,
     mvtnorm
